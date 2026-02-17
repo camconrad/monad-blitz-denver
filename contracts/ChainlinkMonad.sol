@@ -3,19 +3,16 @@ pragma solidity ^0.8.20;
 
 /**
  * @title ChainlinkMonad
- * @notice Monad network Chainlink price feed proxy addresses (use with GammaGuide).
- * @dev Data Feeds: https://docs.chain.link/data-feeds/price-feeds/addresses?page=1&testnetPage=1&network=monad
+ * @notice Monad Chainlink price feed proxy addresses for GammaGuide.
+ * @dev Price feeds (push oracle): use as underlyingFeed in buyOption/settle.
+ *      Data Feeds: https://docs.chain.link/data-feeds/price-feeds/addresses?page=1&testnetPage=1&network=monad
  */
 library ChainlinkMonad {
-    // -------------------------------------------------------------------------
-    // Data Streams (pull oracle)
-    // -------------------------------------------------------------------------
+    /// @dev Data Streams (pull oracle); GammaGuide uses price feed proxies only.
     address internal constant ROUTER = 0x33566fE5976AAa420F3d5C64996641Fc3858CaDB;
     address internal constant VERIFIER_PROXY = 0xEd813D895457907399E41D36Ec0bE103E32148c8;
 
-    // -------------------------------------------------------------------------
-    // Price Feeds (push oracle) — use these as underlyingFeed in GammaGuide
-    // -------------------------------------------------------------------------
+    /// @dev Price feeds (push oracle) — pass to GammaGuide as underlyingFeed
     address internal constant AAVE_USD = 0x2a954d493eE80BcC7cDeF56DB6fC6edC6758CA5d;
     address internal constant ADA_USD = 0xA7cd3368eBC801df68812d46AB6b3F47d4BF37ea;
     address internal constant APT_USD = 0x714de9941991c7Cec93efA6cB63469bD6bFE1258;

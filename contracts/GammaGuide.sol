@@ -7,6 +7,8 @@ import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
  * @title GammaGuide
  * @notice European cash-settled options against tokens using Chainlink oracles (Monad).
  * @dev Buy call/put options; settle at expiry using the underlying's USD price feed.
+ *      Follows Checks-Effects-Interactions: all state updates and events occur before
+ *      any external calls (transferFrom/transfer) to prevent reentrancy.
  */
 contract GammaGuide {
     // -------------------------------------------------------------------------
@@ -18,15 +20,19 @@ contract GammaGuide {
         Put
     }
 
+    /// @param underlyingFeed Chainlink price feed proxy (e.g. ETH_USD_Proxy)
+    /// @param strikePrice USD with 8 decimals (Chainlink format)
+    /// @param premiumPaid In quoteToken units
+    /// @param payoutAmount In quoteToken units; set on settle
     struct Option {
-        address underlyingFeed; // Chainlink price feed proxy (e.g. ETH_USD_Proxy)
+        address underlyingFeed;
         OptionType optionType;
-        uint256 strikePrice; // USD with 8 decimals (Chainlink format)
+        uint256 strikePrice;
         uint256 expiryTs;
         address buyer;
-        uint256 premiumPaid; // in quoteToken units
+        uint256 premiumPaid;
         bool settled;
-        uint256 payoutAmount; // in quoteToken units (set on settle)
+        uint256 payoutAmount;
     }
 
     // -------------------------------------------------------------------------
@@ -55,6 +61,7 @@ contract GammaGuide {
     // Events
     // -------------------------------------------------------------------------
 
+    /// @notice Emitted when a new option is bought.
     event OptionCreated(
         uint256 indexed optionId,
         address indexed underlyingFeed,
@@ -65,6 +72,7 @@ contract GammaGuide {
         uint256 premiumPaid
     );
 
+    /// @notice Emitted when an option is settled at expiry.
     event OptionSettled(
         uint256 indexed optionId,
         address indexed buyer,
@@ -81,22 +89,23 @@ contract GammaGuide {
     // Errors
     // -------------------------------------------------------------------------
 
-    error FeedNotAllowed();
-    error ExpiryInPast();
-    error ExpiryTooFar();
-    error StrikeZero();
-    error TransferFailed();
-    error OptionNotFound();
-    error NotExpired();
-    error AlreadySettled();
-    error StalePrice(uint256 updatedAt, uint256 maxAge);
-    error PriceNotYetAvailable(uint256 updatedAt, uint256 expiryTs);
-    error OnlyOwner();
+    error FeedNotAllowed();       // Underlying feed not in allowedFeeds
+    error ExpiryInPast();         // expiryTs <= block.timestamp
+    error ExpiryTooFar();         // expiryTs > 365 days from now
+    error StrikeZero();           // strikePrice == 0
+    error TransferFailed();       // quoteToken transfer/transferFrom failed
+    error OptionNotFound();       // No option for optionId
+    error NotExpired();           // block.timestamp < expiryTs
+    error AlreadySettled();       // Option already settled
+    error StalePrice(uint256 updatedAt, uint256 maxAge);  // Price too old
+    error PriceNotYetAvailable(uint256 updatedAt, uint256 expiryTs);  // No round at/after expiry
+    error OnlyOwner();            // Caller is not owner
 
     // -------------------------------------------------------------------------
     // Constructor & admin
     // -------------------------------------------------------------------------
 
+    /// @param _quoteToken Token for premiums and payouts (e.g. USDC)
     constructor(address _quoteToken) {
         owner = msg.sender;
         quoteToken = _quoteToken;
@@ -111,21 +120,26 @@ contract GammaGuide {
         _;
     }
 
+    /// @param feed Chainlink proxy address
+    /// @param allowed True to allow as underlying
     function setAllowedFeed(address feed, bool allowed) external onlyOwner {
         allowedFeeds[feed] = allowed;
         emit FeedAllowed(feed, allowed);
     }
 
+    /// @param _maxPriceAge Max seconds since price update when settling
     function setMaxPriceAge(uint256 _maxPriceAge) external onlyOwner {
         maxPriceAge = _maxPriceAge;
         emit MaxPriceAgeSet(_maxPriceAge);
     }
 
+    /// @param _owner New owner
     function setOwner(address _owner) external onlyOwner {
         owner = _owner;
         emit OwnerSet(_owner);
     }
 
+    /// @param _quoteToken New quote token for premiums/payouts
     function setQuoteToken(address _quoteToken) external onlyOwner {
         quoteToken = _quoteToken;
         emit QuoteTokenSet(_quoteToken);
@@ -135,13 +149,20 @@ contract GammaGuide {
     // View
     // -------------------------------------------------------------------------
 
-    /// @notice Get latest price from a Chainlink feed (8 decimals for USD pairs).
+    /// @notice Latest price from a Chainlink feed (8 decimals for USD pairs).
+    /// @param feed Chainlink price feed proxy
+    /// @return price Latest answer (8 decimals)
+    /// @return updatedAt Timestamp when price was updated
     function getLatestPrice(address feed) public view returns (int256 price, uint256 updatedAt) {
         (, int256 answer, , uint256 updatedAt_, ) = IAggregatorV3(feed).latestRoundData();
         return (answer, updatedAt_);
     }
 
-    /// @notice Compute cash payout for an option at a given spot price (8 decimals).
+    /// @notice Intrinsic value at spot (8 decimals).
+    /// @param optionType Call or Put
+    /// @param strikePrice Strike in 8 decimals
+    /// @param spotPrice8 Spot in 8 decimals
+    /// @return payout8 Payout in 8 decimals (max(0, spot-strike) for call; put analogous)
     function computePayout(
         OptionType optionType,
         uint256 strikePrice,
@@ -161,11 +182,12 @@ contract GammaGuide {
     // -------------------------------------------------------------------------
 
     /// @notice Buy a European option. Caller pays premium in quoteToken; must approve this contract.
-    /// @param underlyingFeed Chainlink price feed proxy for the underlying (e.g. ETH_USD_Proxy).
-    /// @param isCall True = call, false = put.
-    /// @param strikePrice Strike in USD with 8 decimals.
-    /// @param expiryTs Unix timestamp of expiry (exercise/settlement time).
-    /// @param premiumAmount Amount of quoteToken to pay as premium.
+    /// @param underlyingFeed Chainlink price feed proxy (e.g. ETH_USD_Proxy)
+    /// @param isCall True = call, false = put
+    /// @param strikePrice Strike in USD, 8 decimals
+    /// @param expiryTs Expiry unix timestamp
+    /// @param premiumAmount Quote token amount (e.g. USDC)
+    /// @return optionId Assigned option id
     function buyOption(
         address underlyingFeed,
         bool isCall,
@@ -178,10 +200,12 @@ contract GammaGuide {
         if (expiryTs > block.timestamp + 365 days) revert ExpiryTooFar();
         if (strikePrice == 0) revert StrikeZero();
 
+        // Effects: update state and emit before any external call (CEI)
         optionId = nextOptionId++;
+        OptionType _optionType = isCall ? OptionType.Call : OptionType.Put;
         options[optionId] = Option({
             underlyingFeed: underlyingFeed,
-            optionType: isCall ? OptionType.Call : OptionType.Put,
+            optionType: _optionType,
             strikePrice: strikePrice,
             expiryTs: expiryTs,
             buyer: msg.sender,
@@ -189,26 +213,27 @@ contract GammaGuide {
             settled: false,
             payoutAmount: 0
         });
-
-        if (premiumAmount > 0) {
-            _transferFrom(msg.sender, address(this), premiumAmount);
-        }
-
         emit OptionCreated(
             optionId,
             underlyingFeed,
-            options[optionId].optionType,
+            _optionType,
             strikePrice,
             expiryTs,
             msg.sender,
             premiumAmount
         );
+
+        // Interactions: external call last
+        if (premiumAmount > 0) {
+            _transferFrom(msg.sender, address(this), premiumAmount);
+        }
         return optionId;
     }
 
-    /// @notice Settle an option after expiry using Chainlink price. Payout is in quoteToken (scaled from 8-dec USD).
-    /// @param optionId Option to settle.
-    /// @dev Uses latestRoundData; requires updatedAt >= expiry and updatedAt not older than maxPriceAge.
+    /// @notice Settle after expiry using Chainlink; payout in quoteToken (scaled from 8-dec USD).
+    /// @param optionId Option to settle
+    /// @return payoutAmount Quote token amount sent to buyer
+    /// @dev Requires updatedAt >= expiry and price not older than maxPriceAge.
     function settle(uint256 optionId) external returns (uint256 payoutAmount) {
         Option storage opt = options[optionId];
         if (opt.buyer == address(0)) revert OptionNotFound();
@@ -224,25 +249,30 @@ contract GammaGuide {
         uint256 payout8 = computePayout(opt.optionType, opt.strikePrice, price);
         // Scale from 8-dec USD to quoteToken decimals (e.g. USDC 6 decimals => divide by 100)
         payoutAmount = _scalePayoutToQuoteToken(opt.underlyingFeed, payout8);
+
+        // Effects: update state and emit before any external call (CEI)
+        address buyer_ = opt.buyer;
         opt.settled = true;
         opt.payoutAmount = payoutAmount;
+        emit OptionSettled(optionId, buyer_, payoutAmount, price);
 
+        // Interactions: external call last
         if (payoutAmount > 0) {
-            _transfer(opt.buyer, payoutAmount);
+            _transfer(buyer_, payoutAmount);
         }
-
-        emit OptionSettled(optionId, opt.buyer, payoutAmount, price);
         return payoutAmount;
     }
 
-    /// @dev Scale payout from 8-decimal USD to quote token units.
-    /// Assumes quote token has 6 decimals (e.g. USDC); otherwise override or configure.
+    /// @dev Scale 8-decimal USD payout to quote token units (uses quote decimals).
+    /// @param payout8 Payout in 8 decimals
+    /// @return Amount in quote token units
     function _scalePayoutToQuoteToken(address, uint256 payout8) internal view returns (uint256) {
         uint8 quoteDecimals = _quoteDecimals();
         if (quoteDecimals >= 8) return payout8 * (10 ** (quoteDecimals - 8));
         return payout8 / (10 ** (8 - quoteDecimals));
     }
 
+    /// @dev Quote token decimals (staticcall); defaults to 6 if not found.
     function _quoteDecimals() internal view returns (uint8) {
         (bool ok, bytes memory data) = quoteToken.staticcall(
             abi.encodeWithSignature("decimals()")
@@ -251,6 +281,7 @@ contract GammaGuide {
         return 6; // default USDC
     }
 
+    /// @dev Pull amount from from to to; reverts on failure.
     function _transferFrom(address from, address to, uint256 amount) internal {
         (bool ok, bytes memory data) = quoteToken.call(
             abi.encodeWithSignature("transferFrom(address,address,uint256)", from, to, amount)
@@ -258,6 +289,7 @@ contract GammaGuide {
         if (!ok || (data.length > 0 && !abi.decode(data, (bool)))) revert TransferFailed();
     }
 
+    /// @dev Send amount to recipient; reverts on failure.
     function _transfer(address to, uint256 amount) internal {
         (bool ok, bytes memory data) = quoteToken.call(
             abi.encodeWithSignature("transfer(address,uint256)", to, amount)

@@ -7,12 +7,17 @@ pragma solidity ^0.8.20;
  * @dev https://docs.chain.link/data-feeds/api-reference
  */
 interface IAggregatorV3 {
+    /// @return Number of decimals in answer (8 for USD pairs)
     function decimals() external view returns (uint8);
 
+    /// @return Human-readable feed description
     function description() external view returns (string memory);
 
+    /// @return Aggregator version
     function version() external view returns (uint256);
 
+    /// @param _roundId Round to query
+    /// @return roundId, answer, startedAt, updatedAt, answeredInRound
     function getRoundData(
         uint80 _roundId
     )
@@ -26,6 +31,7 @@ interface IAggregatorV3 {
             uint80 answeredInRound
         );
 
+    /// @return roundId, answer (price), startedAt, updatedAt, answeredInRound
     function latestRoundData()
         external
         view
