@@ -672,8 +672,8 @@ export default function TradePage() {
                   </div>
                 </fieldset>
 
-                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center">
-                  <label htmlFor="order-quantity" className="text-xs text-muted-foreground">Quantity (contracts)</label>
+                <div className="space-y-1">
+                  <label htmlFor="order-quantity" className="block text-xs text-muted-foreground">Quantity (contracts)</label>
                   <input
                     id="order-quantity"
                     type="number"
@@ -687,8 +687,8 @@ export default function TradePage() {
                 </div>
 
                 {orderType === 'limit' ? (
-                  <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center">
-                    <label htmlFor="order-limit-price" className="text-xs text-muted-foreground">Limit Price ($ per contract)</label>
+                  <div className="space-y-1">
+                    <label htmlFor="order-limit-price" className="block text-xs text-muted-foreground">Limit Price ($ per contract)</label>
                     <input
                       id="order-limit-price"
                       type="number"
@@ -701,8 +701,8 @@ export default function TradePage() {
                     />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center">
-                    <span className="text-xs text-muted-foreground">Market</span>
+                  <div className="space-y-1">
+                    <span className="block text-xs text-muted-foreground">Market</span>
                     <p className="px-3 py-2 text-sm rounded border border-border bg-muted/30 text-muted-foreground" aria-live="polite">
                       Fill at best available {orderSide === 'buy' ? 'ask' : 'bid'} (~${defaultLimit ? defaultLimit.toFixed(2) : '—'})
                     </p>
