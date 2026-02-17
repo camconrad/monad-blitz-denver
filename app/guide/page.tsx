@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { WalletAvatar } from '@/components/wallet-avatar';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
 import { createCoachBus } from '@/lib/voice-coach-bus';
 import { createVoiceWsClient } from '@/lib/voice-ws-client';
@@ -139,6 +140,7 @@ export default function GuidePage() {
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-monad animate-pulse' : 'bg-muted'}`} />
               <span className="text-xs uppercase w-11 text-center inline-block">{isActive ? 'Listening' : 'Ready'}</span>
             </div>
+            <WalletAvatar className="shrink-0" />
           </div>
         </div>
         </header>

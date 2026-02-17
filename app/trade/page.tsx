@@ -2,11 +2,12 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, TrendingDown, Activity, X, Eye } from 'lucide-react';
+import { TrendingUp, TrendingDown, X, Eye } from 'lucide-react';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { WalletAvatar } from '@/components/wallet-avatar';
 import { TradingViewChart } from '@/components/tradingview-chart';
 import {
   getMockOptionsChain,
@@ -283,13 +284,13 @@ export default function TradePage() {
           
           <div className="flex items-center gap-4 min-w-0 justify-end">
             <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary">
-              <Activity className="w-3 h-3 mr-1" />
-              LIVE
+              Testnet
             </Badge>
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Portfolio Value</p>
               <p className="text-sm font-semibold">$125,430.50</p>
             </div>
+            <WalletAvatar className="shrink-0" />
           </div>
         </div>
         </header>
