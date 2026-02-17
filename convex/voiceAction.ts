@@ -83,8 +83,8 @@ export const processAudio = internalAction({
         const rawText =
           geminiJson.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
 
-        const transcriptMatch = rawText.match(/TRANSCRIPT:\s*(.+?)(?=COACH:|$)/is);
-        const coachMatch = rawText.match(/COACH:\s*(.+?)$/is);
+        const transcriptMatch = rawText.match(/TRANSCRIPT:\s*([\s\S]+?)(?=COACH:|$)/i);
+        const coachMatch = rawText.match(/COACH:\s*([\s\S]+?)$/i);
         transcript = transcriptMatch?.[1]?.trim() ?? rawText.slice(0, 200);
         coachText = coachMatch?.[1]?.trim() ?? coachText;
       } catch (e) {

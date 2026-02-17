@@ -23,48 +23,77 @@ function GuideContext() {
   const nearestExpiry = chain.expirations[0] ?? '';
   const callSpreadShort = 3200;
   const callSpreadLong = 3300;
-  const maxLoss = 100; // (long strike - short strike) * 100 in USD per contract, simplified
+  const maxLoss = 100;
   const maxGain = 100;
+  const spotFormatted =
+    spot > 0
+      ? `$${spot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : (pricesLoading ? '…' : '—');
+
+  const rows: { label: string; value: string; sub?: string }[] = [
+    { label: 'Asset', value: symbol },
+    {
+      label: 'Spot',
+      value: spotFormatted,
+      sub: pricesError ? 'CoinGecko unavailable' : 'Live (CoinGecko)',
+    },
+    {
+      label: 'Strategy',
+      value: 'Call Spread',
+      sub: `Buy ${callSpreadShort} call, sell ${callSpreadLong} call · Bullish, defined risk`,
+    },
+    {
+      label: 'Expiry',
+      value: formatExpiryShort(nearestExpiry),
+      sub: nearestExpiry,
+    },
+    {
+      label: 'Strikes',
+      value: `${callSpreadShort} / ${callSpreadLong}`,
+      sub: 'Short / Long (USD)',
+    },
+    {
+      label: 'Risk',
+      value: 'Defined',
+      sub: `Max loss $${maxLoss} · Max gain $${maxGain} per contract`,
+    },
+    {
+      label: 'Market',
+      value: 'European vanilla options',
+      sub: 'Exercise at expiry only',
+    },
+    {
+      label: 'Settlement',
+      value: 'Cash-settled',
+      sub: 'USD (quote token) via Chainlink',
+    },
+    {
+      label: 'Oracle',
+      value: 'Chainlink',
+      sub: 'ETH/USD price feed · Monad',
+    },
+    {
+      label: 'Chain',
+      value: 'Monad Testnet',
+      sub: 'GammaGuide · European cash-settled',
+    },
+  ];
+
+  const coachSummary = `${symbol} ${spotFormatted}, ${formatExpiryShort(nearestExpiry)} call spread ${callSpreadShort}/${callSpreadLong}, defined risk, cash-settled on Monad.`;
 
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-      <div>
-        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Asset</span>
-        <p className="mt-0.5 font-medium">{symbol}</p>
-      </div>
-      <div>
-        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Spot</span>
-        <p className="mt-0.5 font-medium">
-          {pricesLoading && spot === 0 ? (
-            <span className="text-muted-foreground">…</span>
-          ) : (
-            <>${spot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
-          )}
-        </p>
-        {pricesError && <p className="text-xs text-muted-foreground mt-0.5">CoinGecko unavailable</p>}
-      </div>
-      <div>
-        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Strategy</span>
-        <p className="mt-0.5 font-medium">Call Spread</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Buy {callSpreadShort} call, sell {callSpreadLong} call</p>
-      </div>
-      <div>
-        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Expiry</span>
-        <p className="mt-0.5 font-medium">{formatExpiryShort(nearestExpiry)}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{nearestExpiry}</p>
-      </div>
-      <div>
-        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Strikes</span>
-        <p className="mt-0.5 font-medium">{callSpreadShort} / {callSpreadLong}</p>
-      </div>
-      <div>
-        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Risk</span>
-        <p className="mt-0.5 font-medium">Defined</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Max loss ${maxLoss} · Max gain ${maxGain}</p>
-      </div>
-      <div className="col-span-2 pt-1 border-t border-border/60">
-        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Chain</span>
-        <p className="mt-0.5 text-muted-foreground">Monad Testnet · European cash-settled</p>
+    <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
+      <p className="text-xs text-muted-foreground border-b border-border/60 pb-2">
+        Context for coach: {coachSummary}
+      </p>
+      <div className="grid grid-cols-5 gap-x-4 gap-y-2 text-sm">
+        {rows.map(({ label, value, sub }) => (
+          <div key={label}>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+            <p className="mt-0.5 font-semibold text-foreground">{value}</p>
+            {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -76,6 +105,7 @@ export default function GuidePage() {
   const useConvex = !!convexUrl;
 
   const [listening, setListening] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [sessionId, setSessionId] = useState<Id<'voiceSessions'> | null>(null);
   const [transcript, setTranscript] = useState('');
   const [coachText, setCoachText] = useState('');
@@ -109,6 +139,7 @@ export default function GuidePage() {
     if (session.coachText !== undefined) setCoachText(session.coachText);
     if (session.coachPartial !== undefined) setCoachText(session.coachPartial);
     if (session.error) setLastError(session.error);
+    if (session.transcript ?? session.coachText ?? session.error) setProcessing(false);
   }, [session]);
 
   useEffect(() => {
@@ -250,6 +281,7 @@ export default function GuidePage() {
       const chunks = audioChunksRef.current;
       audioChunksRef.current = [];
       const baseUrl = getConvexVoiceUrl();
+      setProcessing(true);
       if (baseUrl && chunks.length > 0) {
         const blob = new Blob(chunks);
         const reader = new FileReader();
@@ -260,14 +292,22 @@ export default function GuidePage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sessionId, audioBase64: base64 }),
-          }).catch(() => setLastError('Failed to send audio'));
+          }).catch(() => {
+            setLastError('Failed to send audio');
+            setProcessing(false);
+          });
         };
       } else if (baseUrl) {
         fetch(`${baseUrl}${CONVEX_VOICE_API_PATH}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
-        }).catch(() => setLastError('Failed to send request'));
+        }).catch(() => {
+          setLastError('Failed to send request');
+          setProcessing(false);
+        });
+      } else {
+        setProcessing(false);
       }
       return;
     }
@@ -284,6 +324,7 @@ export default function GuidePage() {
   }
 
   const isActive = listening;
+  const isProcessing = processing && !transcript && !coachText && !lastError;
   const needsBackend = !convexUrl && !wsUrl;
   const hasError = !!lastError || needsBackend;
   const errorMessage =
@@ -303,8 +344,10 @@ export default function GuidePage() {
           
           <div className="flex items-center gap-2 min-w-0 justify-end">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-background/50">
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-monad animate-pulse' : 'bg-muted'}`} />
-              <span className="text-xs uppercase w-11 text-center inline-block">{isActive ? 'Listening' : 'Ready'}</span>
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-monad animate-pulse' : isProcessing ? 'bg-amber-500 animate-pulse' : 'bg-muted'}`} />
+              <span className="text-xs uppercase w-11 text-center inline-block">
+                {isActive ? 'Listening' : isProcessing ? 'Processing…' : 'Ready'}
+              </span>
             </div>
             <WalletAvatar className="shrink-0" />
           </div>
@@ -416,12 +459,19 @@ export default function GuidePage() {
                       <p className="font-light text-foreground">{coachText}</p>
                     </div>
                   )}
+                  {isProcessing && (
+                    <p className="text-xs text-muted-foreground animate-pulse">Processing…</p>
+                  )}
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
                   <div>
-                    <p className="text-sm font-light">Transcript appears here</p>
-                    <p className="text-[10px] mt-1.5 uppercase tracking-wider opacity-70">Start to begin</p>
+                    <p className="text-sm font-light">
+                      {isProcessing ? 'Processing your message…' : 'Transcript appears here'}
+                    </p>
+                    <p className="text-[10px] mt-1.5 uppercase tracking-wider opacity-70">
+                      {isProcessing ? 'Coach will respond shortly' : 'Start to begin'}
+                    </p>
                   </div>
                 </div>
               )}

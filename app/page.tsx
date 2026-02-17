@@ -8,7 +8,7 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-8 py-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-2xl w-full">
         {/* Guide */}
         <button
           onClick={() => router.push('/guide')}

@@ -15,8 +15,15 @@ export async function GET() {
   url.searchParams.set("include_last_updated_at", "true");
   if (key) url.searchParams.set("x_cg_demo_api_key", key);
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
   try {
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+    const res = await fetch(url.toString(), {
+      signal: controller.signal,
+      next: { revalidate: 60 },
+    });
+    clearTimeout(timeoutId);
     if (!res.ok) {
       return NextResponse.json(
         { error: `CoinGecko ${res.status}` },
@@ -33,9 +40,13 @@ export async function GET() {
     }
     return NextResponse.json(prices);
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Price fetch failed" },
-      { status: 500 }
-    );
+    clearTimeout(timeoutId);
+    const message =
+      e instanceof Error
+        ? e.name === "AbortError"
+          ? "Price fetch timeout"
+          : e.message
+        : "Price fetch failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
