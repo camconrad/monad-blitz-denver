@@ -301,6 +301,9 @@ monad-blitz-denver/
 ```bash
 # .env.local (create this file)
 
+# Monad Testnet (optional RPC override; default: https://testnet-rpc.monad.xyz)
+# NEXT_PUBLIC_MONAD_TESTNET_RPC_URL=https://testnet-rpc.monad.xyz
+
 # Coach WebSocket
 NEXT_PUBLIC_COACH_WS_URL=ws://localhost:8080/ws/voice
 
@@ -313,6 +316,21 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api
 # Optional: Analytics, monitoring
 NEXT_PUBLIC_ANALYTICS_ID=your_id_here
 ```
+
+---
+
+## ⛓️ Monad Testnet (Network)
+
+This app is configured to run on **Monad Testnet**.
+
+| Setting | Value |
+|--------|--------|
+| **RPC URL** | `https://testnet-rpc.monad.xyz` |
+| **Chain ID** | `10143` |
+| **Currency** | `MON` |
+| **Block Explorer** | [https://testnet.monadvision.com](https://testnet.monadvision.com) |
+
+Chain config is centralized in `lib/chain.ts`. Use `monadTestnet` (or the exported constants) when integrating wallets (e.g. wagmi/viem). The RPC URL can be overridden with `NEXT_PUBLIC_MONAD_TESTNET_RPC_URL` in `.env.local`.
 
 ---
 
