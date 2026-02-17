@@ -91,7 +91,7 @@ export default function GuidePage() {
               </div>
 
               <div className="relative z-10 text-center px-6 pt-36">
-                <p className="text-lg tracking-tight text-foreground/90 font-light max-w-xs mx-auto mb-8">
+                <p className="text-lg tracking-tight text-foreground/90 font-light max-w-xs mx-auto mt-24 mb-8">
                   {isActive ? 'Listening on Monad' : 'Speak. Get clarity.'}
                 </p>
                 <Button
@@ -106,9 +106,6 @@ export default function GuidePage() {
                 >
                   {isActive ? 'End' : 'Begin'}
                 </Button>
-                <span className="mt-8 inline-block px-3 py-1.5 rounded-full border border-monad/30 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                  On Monad
-                </span>
               </div>
             </div>
           </div>

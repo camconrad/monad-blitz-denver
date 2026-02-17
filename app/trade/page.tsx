@@ -44,15 +44,8 @@ type ClosedPosition = {
   closedAt: string;
 };
 
-const INITIAL_OPEN: OpenPosition[] = [
-  { id: '1', symbol: 'ETH', expiry: '2025-03-28', strike: 3400, side: 'call', size: 2, entryPrice: 42.50, markPrice: 48.20, liqPrice: null, unrealizedPnl: 1140 },
-  { id: '2', symbol: 'ETH', expiry: '2025-04-25', strike: 3200, side: 'put', size: 1, entryPrice: 85.00, markPrice: 78.40, liqPrice: null, unrealizedPnl: -660 },
-];
-
-const INITIAL_CLOSED: ClosedPosition[] = [
-  { id: 'c1', symbol: 'ETH', expiry: '2025-02-21', strike: 3300, side: 'call', size: 1, entryPrice: 55.00, closePrice: 72.50, realizedPnl: 1750, closedAt: '2025-02-17 14:32' },
-  { id: 'c2', symbol: 'ETH', expiry: '2025-02-14', strike: 3100, side: 'put', size: 2, entryPrice: 22.00, closePrice: 18.20, realizedPnl: -760, closedAt: '2025-02-15 09:15' },
-];
+const INITIAL_OPEN: OpenPosition[] = [];
+const INITIAL_CLOSED: ClosedPosition[] = [];
 
 function formatClosedAt(): string {
   const d = new Date();
@@ -199,7 +192,7 @@ export default function TradePage() {
             {/* Asset Selector & Price */}
             <div className="border border-border rounded-lg card-glass p-3">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="font-bold text-primary">Ξ</span>
                   </div>
@@ -209,26 +202,26 @@ export default function TradePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-sm">
-                  <div>
+                <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 text-sm">
+                  <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h High</p>
                     <p className="font-semibold">$3,285.20</p>
                   </div>
-                  <div>
+                  <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h Low</p>
                     <p className="font-semibold">$3,156.40</p>
                   </div>
-                  <div>
+                  <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Volume</p>
                     <p className="font-semibold">$2.4B</p>
                   </div>
-                  <div>
+                  <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">IV Rank</p>
                     <p className="font-semibold">68%</p>
                   </div>
                 </div>
                 
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-2xl font-bold">$3,245.80</p>
                   <div className="flex items-center justify-end gap-1 text-sm text-green-500">
                     <TrendingUp className="w-4 h-4" />
@@ -280,7 +273,7 @@ export default function TradePage() {
                 {positionsTab === 'open' && (
                   <>
                     {openPositions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-8 text-center">No open positions</p>
+                      <p className="text-sm text-muted-foreground py-8 text-center">No positions yet</p>
                     ) : (
                       <div className="min-w-[640px]">
                         <div className="text-[10px] text-muted-foreground grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_0.8fr_1fr_auto] gap-2 pb-2 border-b border-border mb-2">
@@ -331,7 +324,7 @@ export default function TradePage() {
                 {positionsTab === 'closed' && (
                   <>
                     {closedPositions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-8 text-center">No closed positions</p>
+                      <p className="text-sm text-muted-foreground py-8 text-center">No closed positions yet</p>
                     ) : (
                       <div className="min-w-[640px]">
                         <div className="text-[10px] font-mono text-muted-foreground grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_1fr_1.2fr_auto] gap-2 pb-2 border-b border-border mb-2">
@@ -447,25 +440,25 @@ export default function TradePage() {
                   <div className="min-w-[640px]">
                     {/* Pro-style column order: CALLS Vol, Chg, Last, BidSz, AskSz, Bid, Ask, IV, Δ | STRIKE | PUTS Δ, IV, Bid, Ask, AskSz, BidSz, Last, Chg, Vol */}
                     <div className="text-[10px] text-muted-foreground grid grid-cols-[repeat(19,minmax(0,1fr))] gap-x-1 pb-1.5 border-b border-border sticky top-0 bg-card/95 z-10">
-                      <span className="text-right">Vol</span>
-                      <span className="text-right">Chg</span>
-                      <span className="text-right">Last</span>
-                      <span className="text-right">Bid Sz</span>
-                      <span className="text-right">Ask Sz</span>
-                      <span className="text-right">Bid</span>
-                      <span className="text-right">Ask</span>
-                      <span className="text-right">IV</span>
-                      <span className="text-right">Δ</span>
-                      <span className="text-center font-semibold">Strike</span>
-                      <span className="text-left">Δ</span>
-                      <span className="text-left">IV</span>
-                      <span className="text-left">Bid</span>
-                      <span className="text-left">Ask</span>
-                      <span className="text-left">Bid Sz</span>
-                      <span className="text-left">Ask Sz</span>
-                      <span className="text-left">Last</span>
-                      <span className="text-left">Chg</span>
-                      <span className="text-left">Vol</span>
+                      <span className="text-right truncate min-w-0" title="Vol">Vol</span>
+                      <span className="text-right truncate min-w-0" title="Chg">Chg</span>
+                      <span className="text-right truncate min-w-0" title="Last">Last</span>
+                      <span className="text-right truncate min-w-0" title="Bid Sz">Bid Sz</span>
+                      <span className="text-right truncate min-w-0" title="Ask Sz">Ask Sz</span>
+                      <span className="text-right truncate min-w-0" title="Bid">Bid</span>
+                      <span className="text-right truncate min-w-0" title="Ask">Ask</span>
+                      <span className="text-right truncate min-w-0" title="IV">IV</span>
+                      <span className="text-right truncate min-w-0" title="Δ">Δ</span>
+                      <span className="text-center font-semibold truncate min-w-0" title="Strike">Strike</span>
+                      <span className="text-left truncate min-w-0" title="Δ">Δ</span>
+                      <span className="text-left truncate min-w-0" title="IV">IV</span>
+                      <span className="text-left truncate min-w-0" title="Bid">Bid</span>
+                      <span className="text-left truncate min-w-0" title="Ask">Ask</span>
+                      <span className="text-left truncate min-w-0" title="Bid Sz">Bid Sz</span>
+                      <span className="text-left truncate min-w-0" title="Ask Sz">Ask Sz</span>
+                      <span className="text-left truncate min-w-0" title="Last">Last</span>
+                      <span className="text-left truncate min-w-0" title="Chg">Chg</span>
+                      <span className="text-left truncate min-w-0" title="Vol">Vol</span>
                     </div>
                     {(() => {
                       const atmStrike = chain.length
@@ -521,22 +514,23 @@ export default function TradePage() {
                 {(chainView === 'calls' || chainView === 'puts') && (
                   <div className="min-w-[520px]">
                     <div className="text-[10px] text-muted-foreground grid grid-cols-11 gap-1 pb-1.5 border-b border-border sticky top-0 bg-card/95 z-10">
-                      <span>Strike</span>
-                      <span className="text-right">Bid</span>
-                      <span className="text-right">Ask</span>
-                      <span className="text-right">Last</span>
-                      <span className="text-right">Chg</span>
-                      <span className="text-right">Vol</span>
-                      <span className="text-right">Bid Sz</span>
-                      <span className="text-right">Ask Sz</span>
-                      <span className="text-right">OI</span>
-                      <span className="text-right">IV</span>
-                      <span className="text-right">Δ</span>
+                      <span className="truncate min-w-0" title="Strike">Strike</span>
+                      <span className="text-right truncate min-w-0" title="Bid">Bid</span>
+                      <span className="text-right truncate min-w-0" title="Ask">Ask</span>
+                      <span className="text-right truncate min-w-0" title="Last">Last</span>
+                      <span className="text-right truncate min-w-0" title="Chg">Chg</span>
+                      <span className="text-right truncate min-w-0" title="Vol">Vol</span>
+                      <span className="text-right truncate min-w-0" title="Bid Sz">Bid Sz</span>
+                      <span className="text-right truncate min-w-0" title="Ask Sz">Ask Sz</span>
+                      <span className="text-right truncate min-w-0" title="OI">OI</span>
+                      <span className="text-right truncate min-w-0" title="IV">IV</span>
+                      <span className="text-right truncate min-w-0" title="Δ">Δ</span>
                     </div>
                     {chain.map((row) => {
                       const q = chainView === 'calls' ? row.call : row.put;
+                      const side: OptionSide = chainView === 'calls' ? 'call' : 'put';
                       const isSelected =
-                        selectedOption?.strike === row.strike && selectedOption?.side === chainView;
+                        selectedOption?.strike === row.strike && selectedOption?.side === side;
                       const atmStrike = chain.length ? chain.reduce((best, r) => Math.abs(r.strike - spot) < Math.abs(best - spot) ? r.strike : best, chain[0].strike) : null;
                       const isAtm = atmStrike !== null && row.strike === atmStrike;
                       return (
@@ -546,7 +540,7 @@ export default function TradePage() {
                             setSelectedOption({
                               expiry: selectedExpiry,
                               strike: row.strike,
-                              side: chainView,
+                              side,
                               row,
                             })
                           }
@@ -584,10 +578,10 @@ export default function TradePage() {
                   {selectedOption.side === 'call' ? 'Call' : 'Put'}
                 </p>
               )}
-              <div className="space-y-2">
-                <fieldset className="space-y-1 border-0 p-0 m-0">
-                  <legend className="text-xs text-muted-foreground">Side</legend>
-                  <div className="flex gap-2 pl-3 mt-0.5" role="group" aria-label="Side">
+              <div className="space-y-3">
+                <fieldset className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center border-0 p-0 m-0">
+                  <legend className="col-span-2 text-xs text-muted-foreground mb-0.5">Side</legend>
+                  <div className="col-start-2 flex gap-2" role="group" aria-label="Side">
                     <Button
                       type="button"
                       variant={orderSide === 'buy' ? 'default' : 'outline'}
@@ -617,9 +611,9 @@ export default function TradePage() {
                   </div>
                 </fieldset>
 
-                <fieldset className="space-y-1 border-0 p-0 m-0">
-                  <legend className="text-xs text-muted-foreground">Order Type</legend>
-                  <div className="flex gap-2 pl-3 mt-0.5" role="group" aria-label="Order Type">
+                <fieldset className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center border-0 p-0 m-0">
+                  <legend className="col-span-2 text-xs text-muted-foreground mb-0.5">Order Type</legend>
+                  <div className="col-start-2 flex gap-2" role="group" aria-label="Order Type">
                     <Button
                       type="button"
                       variant={orderType === 'limit' ? 'secondary' : 'ghost'}
@@ -643,7 +637,7 @@ export default function TradePage() {
                   </div>
                 </fieldset>
 
-                <div>
+                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center">
                   <label htmlFor="order-quantity" className="text-xs text-muted-foreground">Quantity (contracts)</label>
                   <input
                     id="order-quantity"
@@ -652,13 +646,13 @@ export default function TradePage() {
                     step={1}
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded border border-border bg-background/50"
+                    className="w-full px-3 py-2 text-sm rounded border border-border bg-background/50"
                     placeholder="1"
                   />
                 </div>
 
                 {orderType === 'limit' ? (
-                  <div>
+                  <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center">
                     <label htmlFor="order-limit-price" className="text-xs text-muted-foreground">Limit Price ($ per contract)</label>
                     <input
                       id="order-limit-price"
@@ -668,13 +662,13 @@ export default function TradePage() {
                       value={limitPrice}
                       onChange={(e) => setLimitPrice(e.target.value)}
                       placeholder={defaultLimit ? defaultLimit.toFixed(2) : '0.00'}
-                      className="w-full mt-1 px-3 py-2 text-sm rounded border border-border bg-background/50"
+                      className="w-full px-3 py-2 text-sm rounded border border-border bg-background/50"
                     />
                   </div>
                 ) : (
-                  <div>
+                  <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center">
                     <span className="text-xs text-muted-foreground">Market</span>
-                    <p className="mt-1 px-3 py-2 text-sm rounded border border-border bg-muted/30 text-muted-foreground" aria-live="polite">
+                    <p className="px-3 py-2 text-sm rounded border border-border bg-muted/30 text-muted-foreground" aria-live="polite">
                       Fill at best available {orderSide === 'buy' ? 'ask' : 'bid'} (~${defaultLimit ? defaultLimit.toFixed(2) : '—'})
                     </p>
                   </div>
