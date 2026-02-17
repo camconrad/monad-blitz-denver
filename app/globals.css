@@ -2,6 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Britti Sans – local font from public/britti-sans/ */
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-LightItalic.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-RegularItalic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-SemiboldItalic.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Britti Sans';
+  src: url('/britti-sans/BrittiSansTrial-BoldItalic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     /* Monad light: purple mood + glass */
@@ -39,8 +97,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 5.5%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    --primary: 252 76% 55%; /* Monad purple – same as light for brand consistency */
+    --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 8%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 8%;
@@ -51,7 +109,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 10%;
     --input: 0 0% 10%;
-    --ring: 0 0% 83.1%;
+    --ring: 252 76% 55%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -61,8 +119,11 @@
 }
 
 @layer base {
+  :root {
+    --font-britti-sans: "Britti Sans", system-ui, sans-serif;
+  }
   body {
-    @apply text-foreground;
+    @apply text-foreground font-sans;
   }
   /* Light: themed purple gradient so cards read as glass */
   body {

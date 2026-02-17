@@ -1,0 +1,11 @@
+---
+description: Commit to git periodically; user pushes manually
+alwaysApply: true
+---
+
+# Git commits
+
+- **Commit locally** after completing a good chunk of work or every so often during a session.
+- Use clear, concise commit messages (e.g. "Add Britti Sans font implementation", "Fix options chain layout").
+- **Do not push** — the user will push to GitHub manually.
+- Prefer smaller, logical commits over one big commit at the end.
