@@ -8,10 +8,18 @@ import { WalletAvatar } from '@/components/wallet-avatar';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
 import { createCoachBus } from '@/lib/voice-coach-bus';
 import { createVoiceWsClient } from '@/lib/voice-ws-client';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { getConvexVoiceUrl, CONVEX_VOICE_API_PATH } from '@/lib/convex-voice';
 
 export default function GuidePage() {
   const wsUrl = process.env.NEXT_PUBLIC_VOICE_WS_URL ?? '';
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? '';
+  const useConvex = !!convexUrl;
+
   const [listening, setListening] = useState(false);
+  const [sessionId, setSessionId] = useState<Id<'voiceSessions'> | null>(null);
   const [transcript, setTranscript] = useState('');
   const [coachText, setCoachText] = useState('');
   const [lastError, setLastError] = useState<string | undefined>(undefined);
@@ -19,6 +27,13 @@ export default function GuidePage() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const wsClientRef = useRef<ReturnType<typeof createVoiceWsClient> | null>(null);
   const busRef = useRef<ReturnType<typeof createCoachBus> | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const createSession = useConvex ? useMutation(api.voice.createSession) : null;
+  const session = useQuery(
+    api.voice.getSession,
+    useConvex && sessionId ? { sessionId } : 'skip'
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -28,11 +43,53 @@ export default function GuidePage() {
     };
   }, []);
 
-  function startCapture() {
+  useEffect(() => {
+    if (!session) return;
+    if (session.transcript !== undefined) setTranscript(session.transcript);
+    if (session.coachText !== undefined) setCoachText(session.coachText);
+    if (session.coachPartial !== undefined) setCoachText(session.coachPartial);
+    if (session.error) setLastError(session.error);
+  }, [session]);
+
+  async function startCapture() {
     if (typeof window === 'undefined') return;
     setLastError(undefined);
+    setTranscript('');
+    setCoachText('');
+
+    if (useConvex && createSession) {
+      try {
+        const id = await createSession();
+        setSessionId(id);
+        audioChunksRef.current = [];
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then((stream) => {
+            streamRef.current = stream;
+            const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+              ? 'audio/webm;codecs=opus'
+              : MediaRecorder.isTypeSupported('audio/webm')
+                ? 'audio/webm'
+                : 'audio/ogg';
+            const recorder = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 16000 });
+            recorderRef.current = recorder;
+            recorder.ondataavailable = (e) => {
+              if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+            recorder.start(250);
+            setListening(true);
+          })
+          .catch(() => {
+            setLastError('Microphone access denied');
+          });
+      } catch (e) {
+        setLastError(e instanceof Error ? e.message : 'Failed to create session');
+      }
+      return;
+    }
+
     if (!wsUrl) {
-      setLastError('NEXT_PUBLIC_VOICE_WS_URL is not set');
+      setLastError('Set NEXT_PUBLIC_CONVEX_URL (recommended) or NEXT_PUBLIC_VOICE_WS_URL');
       return;
     }
     const client = createVoiceWsClient({
@@ -108,7 +165,40 @@ export default function GuidePage() {
       });
   }
 
-  function stopCapture() {
+  async function stopCapture() {
+    if (useConvex && sessionId) {
+      if (recorderRef.current?.state !== 'inactive') {
+        recorderRef.current?.stop();
+      }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      recorderRef.current = null;
+      setListening(false);
+      const chunks = audioChunksRef.current;
+      audioChunksRef.current = [];
+      const baseUrl = getConvexVoiceUrl();
+      if (baseUrl && chunks.length > 0) {
+        const blob = new Blob(chunks);
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          const base64 = (reader.result as string)?.split(',')[1] ?? '';
+          fetch(`${baseUrl}${CONVEX_VOICE_API_PATH}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId, audioBase64: base64 }),
+          }).catch(() => setLastError('Failed to send audio'));
+        };
+      } else if (baseUrl) {
+        fetch(`${baseUrl}${CONVEX_VOICE_API_PATH}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        }).catch(() => setLastError('Failed to send request'));
+      }
+      return;
+    }
+
     if (recorderRef.current?.state !== 'inactive') {
       recorderRef.current?.stop();
     }
@@ -121,8 +211,11 @@ export default function GuidePage() {
   }
 
   const isActive = listening;
-  const hasError = !!lastError || !wsUrl;
-  const errorMessage = lastError ?? (!wsUrl ? 'NEXT_PUBLIC_VOICE_WS_URL is not set' : '');
+  const needsBackend = !convexUrl && !wsUrl;
+  const hasError = !!lastError || needsBackend;
+  const errorMessage =
+    lastError ??
+    (needsBackend ? 'Set NEXT_PUBLIC_CONVEX_URL (recommended) or NEXT_PUBLIC_VOICE_WS_URL' : '');
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden">

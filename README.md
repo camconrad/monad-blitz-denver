@@ -25,7 +25,9 @@ Open [http://localhost:3000](http://localhost:3000) to see your app.
 
 **Network:** This app runs on **Monad Testnet** (Chain ID `10143`, RPC `https://testnet-rpc.monad.xyz`, explorer [testnet.monadvision.com](https://testnet.monadvision.com)). Config is in `lib/chain.ts`.
 
-Optional: set `NEXT_PUBLIC_VOICE_WS_URL` (e.g. `ws://localhost:8080/ws/voice`) to enable the Guide page to stream mic audio as binary chunks over WebSocket and receive JSON events (transcript, coach response, suggestions). If unset or the connection fails, the Guide shows an explicit error state.
+**Voice backend (Gamma Guide):** Use **Convex** (recommended) or a WebSocket server.
+- **Convex:** Run `npx convex dev` to link a Convex project, then set `NEXT_PUBLIC_CONVEX_URL` in `.env.local`. The Guide page will create a session, record audio, and POST to your Convex HTTP action at `/api/voice`; transcript and coach response stream back in real time via Convex subscriptions.
+- **WebSocket:** Set `NEXT_PUBLIC_VOICE_WS_URL` (e.g. `ws://localhost:8080/ws/voice`) to use your own backend. If neither is set, the Guide shows a setup message.
 
 **New to this setup?** → See [QUICKSTART.md](./QUICKSTART.md) for a beginner-friendly guide.
 

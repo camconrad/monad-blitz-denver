@@ -125,14 +125,9 @@
   body {
     @apply text-foreground font-sans;
   }
-  /* Light: themed purple gradient so cards read as glass */
+  /* Light: primary-tinted base so it matches the glass mood; cards sit lighter on top */
   body {
-    background: linear-gradient(
-      165deg,
-      hsl(252, 35%, 97%) 0%,
-      hsl(252, 28%, 95%) 35%,
-      hsl(252, 32%, 96%) 100%
-    );
+    background: hsl(252, 28%, 95%);
   }
   .dark body {
     background: hsl(var(--background));
@@ -140,9 +135,9 @@
 }
 
 @layer utilities {
-  /* Light-mode glass morphism for cards/panels */
+  /* Light: cards lighter than primary-tinted background (frosted glass) */
   .card-glass {
-    background-color: hsl(0 0% 100% / 0.45);
+    background-color: hsl(0 0% 100% / 0.55);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
