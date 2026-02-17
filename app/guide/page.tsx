@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
@@ -74,24 +75,24 @@ export default function GuidePage() {
                   }`}
                 />
                 <div
-                  className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-inner ${
+                  className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-inner overflow-hidden ${
                     isActive
                       ? 'bg-card/90 ring-2 ring-monad/40 ring-offset-2 ring-offset-card shadow-[inset_0_0_20px_rgba(96,66,230,0.15)]'
                       : 'bg-card/80 border border-border/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]'
                   }`}
                 >
-                  <span
-                    className={`text-3xl font-extralight tracking-wider text-foreground/90 select-none transition-opacity ${
-                      isActive ? 'opacity-100' : 'opacity-80'
-                    }`}
-                  >
-                    {isActive ? '···' : '○'}
-                  </span>
+                  <Image
+                    src="/logo.png"
+                    alt="Monad"
+                    width={80}
+                    height={80}
+                    className={`w-full h-full object-contain transition-opacity ${isActive ? 'opacity-100' : 'opacity-90'}`}
+                  />
                 </div>
               </div>
 
               <div className="relative z-10 text-center px-6 pt-36">
-                <p className="text-lg tracking-tight text-foreground/90 font-light max-w-xs mx-auto mt-24 mb-8">
+                <p className="text-lg tracking-tight text-foreground/90 font-bold max-w-xs mx-auto mt-24 mb-8">
                   {isActive ? 'Listening on Monad' : 'Speak. Get clarity.'}
                 </p>
                 <Button

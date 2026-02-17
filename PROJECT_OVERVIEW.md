@@ -49,9 +49,9 @@ Monad Options combines voice AI technology with professional options trading, cr
 
 This application has **2 main pages**:
 
-### 1. **Coach Page** (`/coach`)
+### 1. **Guide Page** (`/guide`)
 
-**Purpose:** AI voice assistant for real-time trading guidance
+**Purpose:** AI voice assistant (Gamma Guide) for real-time trading guidance
 
 **Features:**
 - 🎤 Real-time voice recognition and transcription
@@ -106,10 +106,10 @@ This application has **2 main pages**:
 
 ## 🔗 Inter-Page Communication
 
-The Coach and Trade pages communicate via **BroadcastChannel API**:
+The Guide and Trade pages communicate via **BroadcastChannel API**:
 
 ```typescript
-// Coach page sends suggestions to Trade page
+// Guide page sends suggestions to Trade page
 bus.postMessage({
   type: 'coach.suggestion',
   payload: {
@@ -128,10 +128,10 @@ bus.onmessage = (event) => {
 ```
 
 **Use Cases:**
-- Coach analyzes market conditions → suggests trade to execute
-- Coach detects risk → alerts Trade page
-- Coach monitors open positions → provides guidance
-- User asks Coach about a trade → Coach queries Trade page context
+- Guide analyzes market conditions → suggests trade to execute
+- Guide detects risk → alerts Trade page
+- Guide monitors open positions → provides guidance
+- User asks Guide about a trade → Guide queries Trade page context
 
 ---
 
@@ -265,8 +265,8 @@ Listen to Coach suggestions via BroadcastChannel
 monad-blitz-denver/
 ├── app/
 │   ├── page.tsx              # Home/landing page
-│   ├── coach/
-│   │   └── page.tsx          # Voice coach interface
+│   ├── guide/
+│   │   └── page.tsx          # Gamma Guide (voice) interface
 │   ├── trade/
 │   │   └── page.tsx          # Options trading platform
 │   ├── layout.tsx            # Root layout
@@ -289,7 +289,7 @@ monad-blitz-denver/
 
 | Guide | Use For |
 |-------|---------|
-| **PAGES_GUIDE.md** | Complete Coach page implementation (WebSocket, audio, transcript) |
+| **PAGES_GUIDE.md** | Complete Guide page implementation (WebSocket, audio, transcript) |
 | **PROJECT_CONFIG.md** | Technical setup, dependencies, configuration |
 | **QUICKSTART.md** | Getting started, adding components |
 | **CONTRIBUTING.md** | Code style, conventions, PR process |
@@ -327,14 +327,14 @@ yarn dev
 ### Test Pages
 
 1. **Home:** http://localhost:3000
-2. **Coach:** http://localhost:3000/coach
+2. **Guide:** http://localhost:3000/guide
 3. **Trade:** http://localhost:3000/trade
 
 ### Test Cross-Tab Communication
 
-1. Open Coach page in one tab
+1. Open Guide page in one tab
 2. Open Trade page in another tab
-3. Start session in Coach
+3. Start session in Guide
 4. Verify BroadcastChannel messages in console
 
 ---

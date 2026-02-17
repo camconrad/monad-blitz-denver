@@ -28,8 +28,8 @@ Your **Monad Options** project is fully configured and ready to use!
 
 **3 Pages Created:**
 
-1. **Home (`/`)** - Landing page with navigation to Coach and Trade
-2. **Coach (`/coach`)** - AI Voice Assistant interface (skeleton ready)
+1. **Home (`/`)** - Landing page with navigation to Guide and Trade
+2. **Guide (`/guide`)** - AI Voice Assistant (Gamma Guide) interface
 3. **Trade (`/trade`)** - Options Trading Platform (UI complete)
 
 All pages are:
@@ -46,7 +46,7 @@ All documentation files created and linked:
 2. **PROJECT_OVERVIEW.md** - ⭐ App architecture, pages, data flow
 3. **QUICKSTART.md** - 3-minute beginner guide
 4. **PROJECT_CONFIG.md** - Complete technical configuration
-5. **PAGES_GUIDE.md** - Coach page WebSocket implementation guide
+5. **PAGES_GUIDE.md** - Guide page WebSocket implementation guide
 6. **CONTRIBUTING.md** - Development guidelines
 7. **SETUP_COMPLETE.md** - This file!
 
@@ -67,8 +67,8 @@ All documentation files created and linked:
 monad-blitz-denver/
 ├── app/
 │   ├── page.tsx              ✅ Home/landing page
-│   ├── coach/
-│   │   └── page.tsx          ✅ Voice coach interface
+│   ├── guide/
+│   │   └── page.tsx          ✅ Gamma Guide (voice) interface
 │   ├── trade/
 │   │   └── page.tsx          ✅ Options trading platform
 │   ├── layout.tsx            ✅ Root layout with fonts
@@ -103,7 +103,7 @@ Visit: **http://localhost:3000** (or :3001 if 3000 is in use)
 ### Navigate Between Pages
 
 - **Home:** http://localhost:3001/
-- **Coach:** http://localhost:3001/coach
+- **Guide:** http://localhost:3001/guide
 - **Trade:** http://localhost:3001/trade
 
 ### Add More Components

@@ -40,7 +40,7 @@ Options trading is complex, intimidating, and filled with jargon. Most platforms
 
 This app has **2 main pages**:
 
-1. **`/coach`** - AI Voice Assistant for real-time trading guidance
+1. **`/guide`** - AI Voice Assistant (Gamma Guide) for real-time trading guidance
 2. **`/trade`** - Options Trading Platform (Binance/Bybit/OKX style)
 
 See [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) for complete application architecture.

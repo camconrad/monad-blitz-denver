@@ -12,14 +12,14 @@ export default function Home() {
         {/* Guide */}
         <button
           onClick={() => router.push('/guide')}
-          className="group flex flex-col justify-between text-left rounded-2xl border-2 border-border card-glass p-8 transition-all duration-200 hover:border-primary hover:ring-2 hover:ring-primary/25 hover:ring-offset-2 hover:ring-offset-background hover:shadow-[0_8px_32px_hsl(var(--primary)/0.15)] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[240px]"
+          className="group flex flex-col justify-between text-left rounded-2xl border-2 border-border card-glass p-8 transition-all duration-200 hover:border-monad hover:ring-2 hover:ring-monad/25 hover:ring-offset-2 hover:ring-offset-background hover:shadow-[0_8px_32px_rgb(96_66_230/0.15)] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monad focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[240px]"
         >
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
             <Mic className="w-7 h-7 text-primary" />
           </div>
           <div className="mt-6">
-            <h2 className="text-2xl font-bold mb-2">Gamma Guide</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-2xl font-bold mb-2 [text-wrap:balance]">Gamma Guide</h2>
+            <p className="text-sm text-muted-foreground [text-wrap:balance] line-clamp-2">
               Smart guide for options. Ask in plain English, receive proactive consultation and execution ideas.
             </p>
           </div>
@@ -28,14 +28,14 @@ export default function Home() {
         {/* Trade */}
         <button
           onClick={() => router.push('/trade')}
-          className="group flex flex-col justify-between text-left rounded-2xl border-2 border-border card-glass p-8 transition-all duration-200 hover:border-primary hover:ring-2 hover:ring-primary/25 hover:ring-offset-2 hover:ring-offset-background hover:shadow-[0_8px_32px_hsl(var(--primary)/0.15)] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[240px]"
+          className="group flex flex-col justify-between text-left rounded-2xl border-2 border-border card-glass p-8 transition-all duration-200 hover:border-monad hover:ring-2 hover:ring-monad/25 hover:ring-offset-2 hover:ring-offset-background hover:shadow-[0_8px_32px_rgb(96_66_230/0.15)] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monad focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[240px]"
         >
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
             <CandlestickChart className="w-7 h-7 text-primary" />
           </div>
           <div className="mt-6">
-            <h2 className="text-2xl font-bold mb-2">Options Trading</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-2xl font-bold mb-2 [text-wrap:balance]">Options Trading</h2>
+            <p className="text-sm text-muted-foreground [text-wrap:balance] line-clamp-2">
               European vanilla calls and puts. Live data, Greeks, and execution in one place.
             </p>
           </div>
