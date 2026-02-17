@@ -1,6 +1,19 @@
 # Gamma Guide — Options Smart Contracts
 
-European cash-settled options against tokens using **Chainlink** price feeds on **Monad**.
+European cash-settled options against tokens using **Chainlink** price feeds on **Monad**. Minimal **Robinhood-like** flow: buy calls/puts, hold to expiry, settle for intrinsic value.
+
+## Minimal Robinhood-like scope
+
+| Feature | Supported |
+|--------|-----------|
+| Buy call / put | ✓ `buyOption(underlyingFeed, isCall, strikePrice, expiryTs, premiumAmount)` |
+| European, cash-settled | ✓ Settle at expiry only; payout in quote token (e.g. USDC) |
+| Multiple underlyings | ✓ Any Chainlink USD feed in `allowedFeeds` (ETH, BTC, SOL, etc.) |
+| My positions | ✓ `getOptionIdsByBuyer(buyer)` → fetch `options(id)` for open/closed |
+| Settle at expiry | ✓ Anyone can call `settle(optionId)`; payout to buyer |
+| Emergency pause | ✓ `setPaused(true)` disables new buys; settle still works |
+
+Not in scope (minimal): selling/writing options, secondary market, early exercise, order book.
 
 ## Overview
 
@@ -12,13 +25,15 @@ European cash-settled options against tokens using **Chainlink** price feeds on 
 
 1. **Setup**: Deploy `GammaGuide(quoteToken)` (e.g. USDC). Owner sets `allowedFeeds` for each Chainlink proxy (e.g. `ETH_USD`, `BTC_USD` from `ChainlinkMonad`).
 2. **Buy option**: User calls `buyOption(underlyingFeed, isCall, strikePrice, expiryTs, premiumAmount)`. Strike and oracle prices use **8 decimals** (Chainlink USD convention). User must approve `quoteToken` to the contract.
-3. **Settle**: After `expiryTs`, anyone calls `settle(optionId)`. Contract reads `latestRoundData()` from the feed; requires `updatedAt >= expiryTs` and price not older than `maxPriceAge`. Payout = intrinsic value in USD (8 decimals), converted to quote token and sent to the option buyer.
+3. **My positions**: Frontend calls `getOptionIdsByBuyer(user)` then `options(optionId)` for each; filter by `!settled` (open) or `settled` (closed).
+4. **Settle**: After `expiryTs`, anyone calls `settle(optionId)`. Contract reads `latestRoundData()` from the feed; requires `updatedAt >= expiryTs` and price not older than `maxPriceAge`. Payout = intrinsic value in USD (8 decimals), converted to quote token and sent to the option buyer.
 
 ## Key details
 
 - **Strike / price format**: 8 decimals (e.g. $3245.80 = `324580000000`).
 - **Quote token**: Typically USDC (6 decimals). Payout is scaled from 8-decimal USD to quote token decimals.
 - **Stale protection**: `maxPriceAge` (default 1 hour); settlement requires a round updated at or after expiry.
+- **Pause**: Owner can `setPaused(true)` to stop new buys; existing options can still be settled.
 
 ## Compiling
 
@@ -36,7 +51,8 @@ forge build
 
 1. Deploy `GammaGuide` with your USDC (or other quote token) address.
 2. Call `setAllowedFeed(ChainlinkMonad.ETH_USD, true)` (and other underlyings you support).
-3. Optionally set `maxPriceAge` and ensure the contract holds enough quote token to pay settlements.
+3. Optionally set `maxPriceAge`; ensure the contract holds enough quote token to pay settlements.
+4. Use `setPaused(false)` by default; call `setPaused(true)` only for emergencies.
 
 ## Chainlink on Monad
 

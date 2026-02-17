@@ -48,11 +48,17 @@ contract GammaGuide {
     /// @dev optionId => Option
     mapping(uint256 => Option) public options;
 
+    /// @dev Buyer => list of option ids (for "My positions" / Robinhood-like)
+    mapping(address => uint256[]) private _optionIdsByBuyer;
+
     /// @dev Allowed Chainlink price feed proxies (underlyings)
     mapping(address => bool) public allowedFeeds;
 
     /// @dev Max age of price (seconds) when settling; reject if updatedAt is older
     uint256 public maxPriceAge;
+
+    /// @dev When true, buyOption reverts; settle still works
+    bool public paused;
 
     /// @dev Protocol can receive premiums and pay settlements
     address public owner;
@@ -82,6 +88,7 @@ contract GammaGuide {
 
     event FeedAllowed(address indexed feed, bool allowed);
     event MaxPriceAgeSet(uint256 maxPriceAge);
+    event PausedSet(bool paused);
     event OwnerSet(address indexed owner);
     event QuoteTokenSet(address indexed quoteToken);
 
@@ -100,6 +107,7 @@ contract GammaGuide {
     error StalePrice(uint256 updatedAt, uint256 maxAge);  // Price too old
     error PriceNotYetAvailable(uint256 updatedAt, uint256 expiryTs);  // No round at/after expiry
     error OnlyOwner();            // Caller is not owner
+    error ContractPaused();       // buyOption disabled when paused
 
     // -------------------------------------------------------------------------
     // Constructor & admin
@@ -133,6 +141,12 @@ contract GammaGuide {
         emit MaxPriceAgeSet(_maxPriceAge);
     }
 
+    /// @param _paused True to disable new buys (settle still allowed)
+    function setPaused(bool _paused) external onlyOwner {
+        paused = _paused;
+        emit PausedSet(_paused);
+    }
+
     /// @param _owner New owner
     function setOwner(address _owner) external onlyOwner {
         owner = _owner;
@@ -156,6 +170,13 @@ contract GammaGuide {
     function getLatestPrice(address feed) public view returns (int256 price, uint256 updatedAt) {
         (, int256 answer, , uint256 updatedAt_, ) = IAggregatorV3(feed).latestRoundData();
         return (answer, updatedAt_);
+    }
+
+    /// @notice Option ids bought by a user (for "My positions").
+    /// @param buyer User address
+    /// @return ids Array of option ids (open + settled)
+    function getOptionIdsByBuyer(address buyer) external view returns (uint256[] memory ids) {
+        return _optionIdsByBuyer[buyer];
     }
 
     /// @notice Intrinsic value at spot (8 decimals).
@@ -195,6 +216,7 @@ contract GammaGuide {
         uint256 expiryTs,
         uint256 premiumAmount
     ) external returns (uint256 optionId) {
+        if (paused) revert ContractPaused();
         if (!allowedFeeds[underlyingFeed]) revert FeedNotAllowed();
         if (expiryTs <= block.timestamp) revert ExpiryInPast();
         if (expiryTs > block.timestamp + 365 days) revert ExpiryTooFar();
@@ -202,6 +224,7 @@ contract GammaGuide {
 
         // Effects: update state and emit before any external call (CEI)
         optionId = nextOptionId++;
+        _optionIdsByBuyer[msg.sender].push(optionId);
         OptionType _optionType = isCall ? OptionType.Call : OptionType.Put;
         options[optionId] = Option({
             underlyingFeed: underlyingFeed,
