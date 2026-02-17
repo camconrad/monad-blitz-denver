@@ -139,7 +139,7 @@ See **§ Web APIs (MDN)** above: WebSocket is used for (4) realtime STT/coach st
 
 See **§ Web APIs (MDN)** above: BroadcastChannel is the primary API for same-origin tab ↔ tab communication.
 
-- **Channel name:** `torque_coach_bus` (or your project-specific name).
+- **Channel name:** `gamma_guide_bus` (or your project-specific name).
 - **When:** Opened when session starts; closed when session stops. Use when the Trading tab (or another tab) consumes transcript/context/suggestions.
 - **Message shape:** `{ type, ts, requestId?, payload }`. 
   - Types: `coach.transcript.partial`, `coach.transcript.final`, `coach.suggestion`, `coach.risk.alert`. 
@@ -149,7 +149,7 @@ See **§ Web APIs (MDN)** above: BroadcastChannel is the primary API for same-or
 
 ```typescript
 // lib/voice-coach-bus.ts
-const BUS_CHANNEL = 'torque_coach_bus';
+const BUS_CHANNEL = 'gamma_guide_bus';
 
 export function createBus() {
   return new BroadcastChannel(BUS_CHANNEL);
@@ -408,7 +408,7 @@ async function startSession() {
     setTranscript([]);
     
     // 2. Create BroadcastChannel (tab ↔ tab)
-    busRef.current = new BroadcastChannel('torque_coach_bus');
+    busRef.current = new BroadcastChannel('gamma_guide_bus');
     requestIdRef.current = crypto.randomUUID();
     
     // 3. Get microphone access (MediaDevices.getUserMedia)

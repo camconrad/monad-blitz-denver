@@ -1,4 +1,4 @@
-export const BUS_NAME = 'torque_coach_bus';
+export const BUS_NAME = 'gamma_guide_bus';
 
 export type CoachBusEnvelope = {
   type: string;
