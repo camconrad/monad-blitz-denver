@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, TrendingDown, X, Eye } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronUp, ChevronDown, X, Eye } from 'lucide-react';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -374,9 +374,12 @@ export default function TradePage() {
                 
                 <div className="text-right shrink-0">
                   <p className="text-2xl font-bold">$3,245.80</p>
-                  <div className="flex items-center justify-end gap-1 text-sm text-green-500">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>+2.4% (24h)</span>
+                  <div className={cn(
+                    'flex items-center justify-end gap-1 text-sm',
+                    2.4 >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  )}>
+                    {2.4 >= 0 ? <ChevronUp className="w-5 h-5 shrink-0" fill="currentColor" /> : <ChevronDown className="w-5 h-5 shrink-0" fill="currentColor" />}
+                    <span>{2.4 >= 0 ? '+' : ''}{2.4}% (24h)</span>
                   </div>
                 </div>
               </div>

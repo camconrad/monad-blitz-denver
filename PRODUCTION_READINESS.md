@@ -4,6 +4,19 @@ Checklist and notes for shipping Monad Options (Gamma Guide + options trading).
 
 ---
 
+## Steps to completion
+
+Recommended order: **UI polish → Deploy contracts → Integrate → Run tests**.
+
+| Phase | Tasks | Owner |
+|-------|--------|--------|
+| **1. Minor UI touch** | Fix remaining lints (e.g. aria-selected on trade page); final copy/spacing; ensure Guide context, ticker, and trade layout match design. | Dev |
+| **2. Deploy contracts** | Deploy `GammaGuide(quoteToken)` on Monad testnet; configure `allowedFeeds` (Chainlink ETH/USD); fund contract with quote token for payouts; note deployed address. | Dev / ops |
+| **3. Integrate** | Wire app to deployed contract: set contract address in env (e.g. `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`); point wagmi/abis to deployed address; verify buy option, positions, settle, and pause flows. | Dev |
+| **4. Run tests** | E2E: connect wallet, view chain, buy option, view position, settle (or wait for expiry); smoke test Guide (voice → Convex → playback); verify price/spot from CoinGecko. | Dev / QA |
+
+---
+
 ## Security
 
 | Item | Status | Notes |
@@ -69,9 +82,9 @@ Checklist and notes for shipping Monad Options (Gamma Guide + options trading).
 
 ## Deployment
 
-1. **Convex**: `yarn cd` (convex deploy --yes). Set env in dashboard.
+1. **Convex**: `yarn cd` (convex deploy --yes). Set env in dashboard (GEMINI_API_KEY, ELEVEN_LABS_API_KEY, etc.).
 2. **Vercel**: Connect repo; set env vars; deploy. Optional: outputFileTracingRoot in next.config if needed.
-3. **Contract**: Deploy GammaGuide(quoteToken) on Monad; set allowedFeeds; fund with quote token for payouts.
+3. **Contract** (see Steps to completion): Deploy GammaGuide(quoteToken) on Monad; set allowedFeeds; fund with quote token for payouts; then set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS` (or equivalent) and integrate in app.
 
 ---
 
