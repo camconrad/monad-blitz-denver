@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { TrendingUp, TrendingDown, Activity, X, Eye } from 'lucide-react';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
 import { Button } from '@/components/ui/button';
@@ -581,59 +582,93 @@ export default function TradePage() {
               <div className="space-y-3">
                 <fieldset className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center border-0 p-0 m-0">
                   <legend className="col-span-2 text-xs text-muted-foreground mb-0.5">Side</legend>
-                  <div className="col-start-2 flex gap-2" role="group" aria-label="Side">
-                    <Button
+                  <div className="col-start-2 flex items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5" role="tablist" aria-label="Side">
+                    <button
                       type="button"
-                      variant={orderSide === 'buy' ? 'default' : 'outline'}
-                      size="sm"
-                      className={cn(
-                        'flex-1 text-xs',
-                        orderSide === 'buy' && 'bg-green-600 hover:bg-green-700 text-white'
-                      )}
+                      role="tab"
                       onClick={() => setOrderSide('buy')}
-                      aria-pressed={orderSide === 'buy'}
-                    >
-                      Buy
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={orderSide === 'sell' ? 'default' : 'outline'}
-                      size="sm"
+                      aria-selected={orderSide === 'buy' ? 'true' : 'false'}
                       className={cn(
-                        'flex-1 text-xs',
-                        orderSide === 'sell' && 'bg-red-600 hover:bg-red-700 text-white'
+                        'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                        orderSide === 'buy' ? 'text-white' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                       )}
-                      onClick={() => setOrderSide('sell')}
-                      aria-pressed={orderSide === 'sell'}
                     >
-                      Sell
-                    </Button>
+                      {orderSide === 'buy' && (
+                        <motion.div
+                          layoutId="place-order-side-pill"
+                          transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                          className="absolute inset-0 rounded-md bg-green-600"
+                          style={{ zIndex: -1 }}
+                        />
+                      )}
+                      <span className="relative">Buy</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      onClick={() => setOrderSide('sell')}
+                      aria-selected={orderSide === 'sell' ? 'true' : 'false'}
+                      className={cn(
+                        'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                        orderSide === 'sell' ? 'text-white' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      )}
+                    >
+                      {orderSide === 'sell' && (
+                        <motion.div
+                          layoutId="place-order-side-pill"
+                          transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                          className="absolute inset-0 rounded-md bg-red-600"
+                          style={{ zIndex: -1 }}
+                        />
+                      )}
+                      <span className="relative">Sell</span>
+                    </button>
                   </div>
                 </fieldset>
 
                 <fieldset className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center border-0 p-0 m-0">
                   <legend className="col-span-2 text-xs text-muted-foreground mb-0.5">Order Type</legend>
-                  <div className="col-start-2 flex gap-2" role="group" aria-label="Order Type">
-                    <Button
+                  <div className="col-start-2 flex items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5" role="tablist" aria-label="Order Type">
+                    <button
                       type="button"
-                      variant={orderType === 'limit' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className="flex-1 text-xs"
+                      role="tab"
                       onClick={() => setOrderType('limit')}
-                      aria-pressed={orderType === 'limit'}
+                      aria-selected={orderType === 'limit' ? 'true' : 'false'}
+                      className={cn(
+                        'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                        orderType === 'limit' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      )}
                     >
-                      Limit
-                    </Button>
-                    <Button
+                      {orderType === 'limit' && (
+                        <motion.div
+                          layoutId="place-order-type-pill"
+                          transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                          className="absolute inset-0 rounded-md bg-primary"
+                          style={{ zIndex: -1 }}
+                        />
+                      )}
+                      <span className="relative">Limit</span>
+                    </button>
+                    <button
                       type="button"
-                      variant={orderType === 'market' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className="flex-1 text-xs"
+                      role="tab"
                       onClick={() => setOrderType('market')}
-                      aria-pressed={orderType === 'market'}
+                      aria-selected={orderType === 'market' ? 'true' : 'false'}
+                      className={cn(
+                        'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                        orderType === 'market' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      )}
                     >
-                      Market
-                    </Button>
+                      {orderType === 'market' && (
+                        <motion.div
+                          layoutId="place-order-type-pill"
+                          transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                          className="absolute inset-0 rounded-md bg-primary"
+                          style={{ zIndex: -1 }}
+                        />
+                      )}
+                      <span className="relative">Market</span>
+                    </button>
                   </div>
                 </fieldset>
 
