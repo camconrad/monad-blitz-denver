@@ -23,6 +23,8 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) to see your app.
 
+Optional: set `NEXT_PUBLIC_VOICE_WS_URL` (e.g. `ws://localhost:8080/ws/voice`) to enable the Guide page to stream mic audio as binary chunks over WebSocket and receive JSON events (transcript, coach response, suggestions). If unset or the connection fails, the Guide shows an explicit error state.
+
 **New to this setup?** → See [QUICKSTART.md](./QUICKSTART.md) for a beginner-friendly guide.
 
 ## 💡 The Problem We Solve

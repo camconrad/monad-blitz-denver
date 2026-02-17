@@ -1,17 +1,130 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
+import { createCoachBus } from '@/lib/voice-coach-bus';
+import { createVoiceWsClient } from '@/lib/voice-ws-client';
 
 export default function GuidePage() {
-  const [isActive, setIsActive] = useState(false);
+  const wsUrl = process.env.NEXT_PUBLIC_VOICE_WS_URL ?? '';
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [coachText, setCoachText] = useState('');
+  const [lastError, setLastError] = useState<string | undefined>(undefined);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const wsClientRef = useRef<ReturnType<typeof createVoiceWsClient> | null>(null);
+  const busRef = useRef<ReturnType<typeof createCoachBus> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    busRef.current = createCoachBus();
+    return () => {
+      busRef.current = null;
+    };
+  }, []);
+
+  function startCapture() {
+    if (typeof window === 'undefined') return;
+    setLastError(undefined);
+    if (!wsUrl) {
+      setLastError('NEXT_PUBLIC_VOICE_WS_URL is not set');
+      return;
+    }
+    const client = createVoiceWsClient({
+      url: wsUrl,
+      callbacks: {
+        onOpen: () => setListening(true),
+        onClose: () => {
+          setListening(false);
+          streamRef.current?.getTracks().forEach((t) => t.stop());
+          streamRef.current = null;
+          recorderRef.current = null;
+        },
+        onError: () => {
+          setLastError('WebSocket connection failed');
+          setListening(false);
+        },
+        onMessage: (data: unknown) => {
+        const msg = data as { type?: string; text?: string; message?: string; [k: string]: unknown };
+        const t = msg.text ?? '';
+        switch (msg.type) {
+          case 'transcript_partial':
+            setTranscript((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
+            busRef.current?.publish('coach.transcript.partial', { text: t });
+            break;
+          case 'transcript_final':
+            setTranscript((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
+            busRef.current?.publish('coach.transcript.final', { text: t });
+            break;
+          case 'coach_response_partial':
+            setCoachText((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
+            break;
+          case 'coach_response_final':
+            setCoachText((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
+            break;
+          case 'suggestion':
+            busRef.current?.publish('coach.suggestion', msg);
+            break;
+          case 'risk_alert':
+            busRef.current?.publish('coach.risk.alert', msg);
+            break;
+          case 'error':
+            setLastError((msg.message as string) ?? 'Unknown error');
+            break;
+          default:
+            break;
+        }
+        },
+      },
+    });
+    wsClientRef.current = client;
+    client.connect();
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        streamRef.current = stream;
+        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : 'audio/ogg';
+        const recorder = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 16000 });
+        recorderRef.current = recorder;
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0 && wsClientRef.current) {
+            e.data.arrayBuffer().then((buf) => wsClientRef.current!.sendBinary(buf));
+          }
+        };
+        recorder.start(250);
+      })
+      .catch(() => {
+        setLastError('Microphone access denied');
+        wsClientRef.current?.close();
+      });
+  }
+
+  function stopCapture() {
+    if (recorderRef.current?.state !== 'inactive') {
+      recorderRef.current?.stop();
+    }
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    recorderRef.current = null;
+    wsClientRef.current?.close();
+    wsClientRef.current = null;
+    setListening(false);
+  }
+
+  const isActive = listening;
+  const hasError = !!lastError || !wsUrl;
+  const errorMessage = lastError ?? (!wsUrl ? 'NEXT_PUBLIC_VOICE_WS_URL is not set' : '');
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
-      {/* Header - wrapped card to match page content pattern */}
       <div className="px-2 pt-2 shrink-0">
         <header className="rounded-lg border border-border card-glass">
           <div className="grid grid-cols-3 items-center gap-3 px-3 py-2">
@@ -24,20 +137,17 @@ export default function GuidePage() {
           <div className="flex items-center gap-2 min-w-0 justify-end">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-background/50">
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-monad animate-pulse' : 'bg-muted'}`} />
-              <span className="text-xs uppercase w-11 text-center inline-block">{isActive ? 'Active' : 'Ready'}</span>
+              <span className="text-xs uppercase w-11 text-center inline-block">{isActive ? 'Listening' : 'Ready'}</span>
             </div>
           </div>
         </div>
         </header>
       </div>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-hidden">
         <div className="h-full flex flex-col lg:flex-row gap-2 p-2">
-          {/* Left Column - Abstract voice interface */}
           <div className="flex-1 lg:flex-[0.45] flex flex-col gap-2">
             <div className="flex-1 relative rounded-2xl overflow-hidden flex items-center justify-center min-h-[320px]">
-              {/* Ambient background: subtle radial highlight at center */}
               <div
                 className={`absolute inset-0 rounded-2xl transition-opacity duration-700 ${
                   isActive ? 'opacity-100' : 'opacity-70'
@@ -54,7 +164,6 @@ export default function GuidePage() {
                 }`}
               />
 
-              {/* Concentric rings - ripple effect */}
               <div className="absolute flex items-center justify-center">
                 <div className={`absolute w-20 h-20 rounded-full border border-foreground/10 transition-all duration-500 ${isActive ? 'border-monad/20 animate-voice-ring' : ''}`} />
                 <div className={`absolute w-28 h-28 rounded-full border border-foreground/10 transition-all duration-500 ${isActive ? 'border-monad/20 animate-voice-ring [animation-delay:150ms]' : ''}`} />
@@ -62,7 +171,6 @@ export default function GuidePage() {
                 <div className={`absolute w-44 h-44 rounded-full border border-foreground/10 transition-all duration-500 ${isActive ? 'border-monad/20 animate-voice-ring [animation-delay:450ms]' : ''}`} />
               </div>
 
-              {/* Outer glow + center orb */}
               <div className="absolute flex items-center justify-center">
                 <div
                   className={`absolute w-[180px] h-[180px] rounded-full blur-3xl transition-all duration-700 ${
@@ -98,7 +206,7 @@ export default function GuidePage() {
                 <Button
                   size="lg"
                   variant={isActive ? 'destructive' : 'primarySubtle'}
-                  onClick={() => setIsActive(!isActive)}
+                  onClick={() => (isActive ? stopCapture() : startCapture())}
                   className={
                     isActive
                       ? 'rounded-full px-10 py-6 text-sm font-medium border border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive/60 transition-colors'
@@ -111,7 +219,6 @@ export default function GuidePage() {
             </div>
           </div>
 
-          {/* Right Column - Transcript & Context */}
           <div className="flex-1 lg:flex-[0.55] flex flex-col gap-2">
             <div className="rounded-lg border border-border/60 card-glass p-3">
               <h3 className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
@@ -129,17 +236,41 @@ export default function GuidePage() {
               </div>
             </div>
             
-            <div className="flex-1 rounded-lg border border-border/60 card-glass p-3 flex items-center justify-center min-h-[120px]">
-              <div className="text-center text-muted-foreground">
-                <p className="text-sm font-light">Transcript appears here</p>
-                <p className="text-[10px] mt-1.5 uppercase tracking-wider opacity-70">Start to begin</p>
+            {hasError && errorMessage && (
+              <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                {errorMessage}
               </div>
+            )}
+
+            <div className="flex-1 rounded-lg border border-border/60 card-glass p-3 flex flex-col min-h-[120px] overflow-hidden">
+              {transcript || coachText ? (
+                <div className="space-y-2 text-sm">
+                  {transcript && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">You</p>
+                      <p className="font-light text-foreground">{transcript}</p>
+                    </div>
+                  )}
+                  {coachText && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">Coach</p>
+                      <p className="font-light text-foreground">{coachText}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
+                  <div>
+                    <p className="text-sm font-light">Transcript appears here</p>
+                    <p className="text-[10px] mt-1.5 uppercase tracking-wider opacity-70">Start to begin</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer - wrapped card to match page content pattern */}
       <div className="px-2 pb-2 shrink-0">
         <footer className="rounded-lg border border-border card-glass px-3 py-2 w-full">
           <div className="w-full flex items-center justify-between">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, TrendingDown, Activity, X, Eye } from 'lucide-react';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
@@ -17,6 +17,8 @@ import {
   type StrikeRow,
 } from '@/lib/options-chain';
 import { cn } from '@/lib/utils';
+import { createCoachBus } from '@/lib/voice-coach-bus';
+import type { CoachBusEnvelope } from '@/lib/voice-coach-bus';
 
 // Mock types for positions (replace with real data/API later)
 type OpenPosition = {
@@ -75,6 +77,68 @@ export default function TradePage() {
   const [closeMode, setCloseMode] = useState<'full' | 'partial'>('full');
   const [partialCloseQty, setPartialCloseQty] = useState<string>('1');
   const [viewClosedId, setViewClosedId] = useState<string | null>(null);
+  const [coachSuggestions, setCoachSuggestions] = useState<Array<{ id: string; receivedAt: number; payload: unknown }>>([]);
+  const [coachRisk, setCoachRisk] = useState<{ severity: 'warn' | 'block'; message: string; receivedAt: number } | null>(null);
+  const [liveTranscript, setLiveTranscript] = useState<string | undefined>(undefined);
+  const busRef = useRef<ReturnType<typeof createCoachBus> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    busRef.current = createCoachBus();
+    const bus = busRef.current;
+    const unsub = bus.subscribe((env: CoachBusEnvelope) => {
+      switch (env.type) {
+        case 'coach.suggestion':
+          setCoachSuggestions((prev) => {
+            const next = [...prev, { id: `s-${env.ts}`, receivedAt: env.ts, payload: env.payload }];
+            return next.slice(-5);
+          });
+          break;
+        case 'coach.risk.alert':
+          setCoachRisk({
+            severity: (env.payload as { severity?: string })?.severity === 'block' ? 'block' : 'warn',
+            message: (env.payload as { message?: string })?.message ?? 'Risk alert',
+            receivedAt: env.ts,
+          });
+          break;
+        case 'coach.transcript.partial':
+        case 'coach.transcript.final':
+          setLiveTranscript((env.payload as { text?: string })?.text ?? '');
+          break;
+        default:
+          break;
+      }
+    });
+    return () => {
+      unsub();
+      busRef.current = null;
+    };
+  }, []);
+
+  const tradingContextPayload = useMemo(() => {
+    const symbol = typeof selectedAsset === 'string' ? selectedAsset : (selectedAsset as { symbol?: string })?.symbol ?? (selectedAsset as { underlying?: string })?.underlying ?? 'UNKNOWN';
+    return {
+      ts: Date.now(),
+      symbol,
+      selectedAsset: typeof selectedAsset === 'string' ? selectedAsset : selectedAsset,
+      selectedOption: selectedOption
+        ? { expiry: selectedOption.expiry, strike: selectedOption.strike, side: selectedOption.side }
+        : null,
+      orderSide,
+      orderType,
+      quantity,
+      limitPrice: orderType === 'limit' ? limitPrice : undefined,
+      openCount: openPositions.length,
+      closedCount: closedPositions.length,
+      openPositions: openPositions.slice(0, 10).map((p) => ({ id: p.id, symbol: p.symbol, expiry: p.expiry, strike: p.strike, side: p.side, size: p.size, unrealizedPnl: p.unrealizedPnl })),
+      closedPositions: closedPositions.slice(0, 5).map((p) => ({ id: p.id, symbol: p.symbol, realizedPnl: p.realizedPnl })),
+    };
+  }, [selectedAsset, selectedOption, openPositions, closedPositions, orderSide, orderType, quantity, limitPrice]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !busRef.current) return;
+    busRef.current.publish('trading.context', tradingContextPayload);
+  }, [tradingContextPayload]);
 
   const chain = chainSnapshot.chainsByExpiry[selectedExpiry] ?? [];
   const spot = chainSnapshot.spot;
@@ -183,6 +247,13 @@ export default function TradePage() {
         )
       );
     }
+    if (busRef.current) {
+      busRef.current.publish('trading.intent', {
+        intent: qty >= pos.size ? 'close' : 'reduce',
+        symbol: pos.symbol,
+        details: { positionId: pos.id, closeQty: qty, full: qty >= pos.size },
+      });
+    }
     setCloseModalPosition(null);
     setCloseMode('full');
     setPartialCloseQty('1');
@@ -224,10 +295,49 @@ export default function TradePage() {
         </header>
       </div>
 
-      {/* Main Trading Interface */}
       <main className="flex-1 overflow-hidden">
-        <div className="h-full flex flex-col lg:flex-row gap-2 p-2">
-          {/* Left Column - Market Data & Chart */}
+        <div className="h-full flex flex-col gap-2 p-2">
+          {(coachRisk || liveTranscript || coachSuggestions.length > 0) && (
+            <div className="shrink-0 rounded-lg border border-border card-glass p-3 space-y-2">
+              <h3 className="text-sm font-semibold">Coach</h3>
+              {coachRisk && (
+                <div
+                  className={cn(
+                    'rounded-md px-3 py-2 text-sm',
+                    coachRisk.severity === 'block'
+                      ? 'bg-destructive/15 text-destructive border border-destructive/40'
+                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/40'
+                  )}
+                >
+                  {coachRisk.message}
+                </div>
+              )}
+              {liveTranscript && <p className="text-xs text-muted-foreground truncate">Last: {liveTranscript}</p>}
+              {coachSuggestions.length > 0 && (
+                <div className="space-y-1.5">
+                  {coachSuggestions.map((s) => {
+                    const p = s.payload as { title?: string; rationale?: string; actions?: unknown[] };
+                    return (
+                      <div key={s.id} className="rounded-md border border-border bg-muted/20 p-2 text-xs">
+                        {p.title != null && <p className="font-medium text-foreground">{p.title}</p>}
+                        {p.rationale != null && <p className="text-muted-foreground mt-0.5">{p.rationale}</p>}
+                        {Array.isArray(p.actions) && p.actions.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {p.actions.map((a, i) => (
+                              <span key={i} className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+                                {typeof a === 'object' && a !== null && 'label' in (a as object) ? (a as { label: string }).label : String(a)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex-1 flex flex-col lg:flex-row gap-2 min-h-0">
           <div className="flex-1 lg:flex-[0.6] flex flex-col gap-2">
             {/* Asset Selector & Price */}
             <div className="border border-border rounded-lg card-glass p-3">
@@ -774,7 +884,28 @@ export default function TradePage() {
                   </div>
                 )}
 
-                <Button className="w-full" size="lg" disabled={!selectedOption}>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  disabled={!selectedOption}
+                  onClick={() => {
+                    if (!busRef.current || !selectedOption) return;
+                    const symbol = typeof selectedAsset === 'string' ? selectedAsset : (selectedAsset as { symbol?: string })?.symbol ?? 'UNKNOWN';
+                    busRef.current.publish('trading.intent', {
+                      intent: 'open',
+                      symbol,
+                      details: {
+                        expiry: selectedOption.expiry,
+                        strike: selectedOption.strike,
+                        side: selectedOption.side,
+                        orderSide,
+                        quantity: quantity,
+                        orderType,
+                        limitPrice: orderType === 'limit' ? limitPrice : undefined,
+                      },
+                    });
+                  }}
+                >
                   {orderType === 'market' ? 'Place Market Order' : 'Place Limit Order'}
                 </Button>
 
@@ -817,6 +948,7 @@ export default function TradePage() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </main>
