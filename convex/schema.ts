@@ -11,6 +11,7 @@ export default defineSchema({
     transcriptPartial: v.optional(v.string()),
     coachText: v.optional(v.string()),
     coachPartial: v.optional(v.string()),
+    coachAudioUrl: v.optional(v.string()),
     error: v.optional(v.string()),
     updatedAt: v.number(),
   }).index("by_updated", ["updatedAt"]),

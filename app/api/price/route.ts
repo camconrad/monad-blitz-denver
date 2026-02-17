@@ -1,0 +1,41 @@
+import { NextResponse } from "next/server";
+
+const COINGECKO_IDS = "ethereum,bitcoin,solana,wrapped-bitcoin";
+const COINGECKO_VS = "usd";
+
+/**
+ * GET /api/price — spot prices from CoinGecko (ETH, BTC, SOL, WBTC).
+ * Set COINGECKO_API_KEY in .env.local for higher rate limits (Demo API: x_cg_demo_api_key).
+ */
+export async function GET() {
+  const key = process.env.COINGECKO_API_KEY;
+  const url = new URL("https://api.coingecko.com/api/v3/simple/price");
+  url.searchParams.set("ids", COINGECKO_IDS);
+  url.searchParams.set("vs_currencies", COINGECKO_VS);
+  url.searchParams.set("include_last_updated_at", "true");
+  if (key) url.searchParams.set("x_cg_demo_api_key", key);
+
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: `CoinGecko ${res.status}` },
+        { status: 502 }
+      );
+    }
+    const data = (await res.json()) as Record<
+      string,
+      { usd?: number; usd_last_updated_at?: number }
+    >;
+    const prices: Record<string, number> = {};
+    for (const [id, o] of Object.entries(data)) {
+      if (typeof o?.usd === "number") prices[id] = o.usd;
+    }
+    return NextResponse.json(prices);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Price fetch failed" },
+      { status: 500 }
+    );
+  }
+}

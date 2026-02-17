@@ -97,6 +97,22 @@ export const setCoachFinal = internalMutation({
 });
 
 /**
+ * Internal: set TTS audio URL for coach response.
+ */
+export const setCoachAudioUrl = internalMutation({
+  args: {
+    sessionId: v.id("voiceSessions"),
+    url: v.string(),
+  },
+  handler: async (ctx, { sessionId, url }) => {
+    await ctx.db.patch(sessionId, {
+      coachAudioUrl: url,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
  * Internal: set error message.
  */
 export const setError = internalMutation({

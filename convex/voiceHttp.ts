@@ -50,22 +50,10 @@ export const postVoice = httpAction(async (ctx, request) => {
       );
     }
 
-    // Stub: no real STT/LLM yet — set placeholder transcript and coach.
-    // Add OPENAI_API_KEY and call Whisper + Chat in a Convex action for real behavior.
-    const hasAudio = typeof body.audioBase64 === "string" && body.audioBase64.length > 0;
-    const transcriptText = hasAudio
-      ? "Voice message received. Add OpenAI for speech-to-text."
-      : "No audio in request.";
-    const coachText =
-      "Consider your risk tolerance before trading. This is placeholder guidance — add OpenAI for full coach.";
-
-    await ctx.runMutation(internal.voice.setTranscriptFinal, {
+    // Run Node action in background (Gemini + ElevenLabs when env set); session updates via subscription.
+    void ctx.runAction(internal.voiceAction.processAudio, {
       sessionId,
-      text: transcriptText,
-    });
-    await ctx.runMutation(internal.voice.setCoachFinal, {
-      sessionId,
-      text: coachText,
+      audioBase64: typeof body.audioBase64 === "string" ? body.audioBase64 : undefined,
     });
 
     return new Response(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -12,6 +12,63 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { getConvexVoiceUrl, CONVEX_VOICE_API_PATH } from '@/lib/convex-voice';
+import { getMockOptionsChain, formatExpiryShort } from '@/lib/options-chain';
+import { useSpotPrices, ethSpot } from '@/lib/use-spot-prices';
+
+function GuideContext() {
+  const chain = useMemo(() => getMockOptionsChain(), []);
+  const { prices, loading: pricesLoading, error: pricesError } = useSpotPrices();
+  const spot = ethSpot(prices, chain.spot);
+  const symbol = chain.symbol;
+  const nearestExpiry = chain.expirations[0] ?? '';
+  const callSpreadShort = 3200;
+  const callSpreadLong = 3300;
+  const maxLoss = 100; // (long strike - short strike) * 100 in USD per contract, simplified
+  const maxGain = 100;
+
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <div>
+        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Asset</span>
+        <p className="mt-0.5 font-medium">{symbol}</p>
+      </div>
+      <div>
+        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Spot</span>
+        <p className="mt-0.5 font-medium">
+          {pricesLoading && spot === 0 ? (
+            <span className="text-muted-foreground">…</span>
+          ) : (
+            <>${spot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+          )}
+        </p>
+        {pricesError && <p className="text-xs text-muted-foreground mt-0.5">CoinGecko unavailable</p>}
+      </div>
+      <div>
+        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Strategy</span>
+        <p className="mt-0.5 font-medium">Call Spread</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Buy {callSpreadShort} call, sell {callSpreadLong} call</p>
+      </div>
+      <div>
+        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Expiry</span>
+        <p className="mt-0.5 font-medium">{formatExpiryShort(nearestExpiry)}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{nearestExpiry}</p>
+      </div>
+      <div>
+        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Strikes</span>
+        <p className="mt-0.5 font-medium">{callSpreadShort} / {callSpreadLong}</p>
+      </div>
+      <div>
+        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Risk</span>
+        <p className="mt-0.5 font-medium">Defined</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Max loss ${maxLoss} · Max gain ${maxGain}</p>
+      </div>
+      <div className="col-span-2 pt-1 border-t border-border/60">
+        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Chain</span>
+        <p className="mt-0.5 text-muted-foreground">Monad Testnet · European cash-settled</p>
+      </div>
+    </div>
+  );
+}
 
 export default function GuidePage() {
   const wsUrl = process.env.NEXT_PUBLIC_VOICE_WS_URL ?? '';
@@ -43,6 +100,9 @@ export default function GuidePage() {
     };
   }, []);
 
+  const coachAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastCoachAudioUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!session) return;
     if (session.transcript !== undefined) setTranscript(session.transcript);
@@ -50,6 +110,19 @@ export default function GuidePage() {
     if (session.coachPartial !== undefined) setCoachText(session.coachPartial);
     if (session.error) setLastError(session.error);
   }, [session]);
+
+  useEffect(() => {
+    const url = session?.coachAudioUrl;
+    if (!url || url === lastCoachAudioUrlRef.current) return;
+    lastCoachAudioUrlRef.current = url;
+    const audio = new Audio(url);
+    coachAudioRef.current = audio;
+    audio.play().catch(() => {});
+    return () => {
+      audio.pause();
+      coachAudioRef.current = null;
+    };
+  }, [session?.coachAudioUrl]);
 
   async function startCapture() {
     if (typeof window === 'undefined') return;
@@ -319,16 +392,7 @@ export default function GuidePage() {
               <h3 className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
                 Context
               </h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Asset</span>
-                  <p className="mt-0.5">ETH-USD</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Strategy</span>
-                  <p className="mt-0.5">Call Spread</p>
-                </div>
-              </div>
+              <GuideContext />
             </div>
             
             {hasError && errorMessage && (

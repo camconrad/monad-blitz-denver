@@ -10,6 +10,7 @@
 
 import type * as http from "../http.js";
 import type * as voice from "../voice.js";
+import type * as voiceAction from "../voiceAction.js";
 import type * as voiceHttp from "../voiceHttp.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   http: typeof http;
   voice: typeof voice;
+  voiceAction: typeof voiceAction;
   voiceHttp: typeof voiceHttp;
 }>;
 
