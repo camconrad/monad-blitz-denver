@@ -149,6 +149,45 @@ export default function TradePage() {
   const selectionKey = selectedOption
     ? `${selectedOption.expiry}-${selectedOption.strike}-${selectedOption.side}`
     : null;
+
+  function confirmClosePosition() {
+    const pos = closeModalPosition;
+    if (!pos) return;
+    const qty = closeMode === 'full' ? pos.size : Math.min(Math.max(1, parseInt(partialCloseQty, 10) || 1), pos.size);
+    const realizedPnl = (pos.unrealizedPnl / pos.size) * qty;
+    const closed: ClosedPosition = {
+      id: `${pos.id}-${Date.now()}`,
+      symbol: pos.symbol,
+      expiry: pos.expiry,
+      strike: pos.strike,
+      side: pos.side,
+      size: qty,
+      entryPrice: pos.entryPrice,
+      closePrice: pos.markPrice,
+      realizedPnl,
+      closedAt: formatClosedAt(),
+    };
+    setClosedPositions((prev) => [...prev, closed]);
+    if (qty >= pos.size) {
+      setOpenPositions((prev) => prev.filter((p) => p.id !== pos.id));
+    } else {
+      setOpenPositions((prev) =>
+        prev.map((p) =>
+          p.id === pos.id
+            ? {
+                ...p,
+                size: p.size - qty,
+                unrealizedPnl: (p.unrealizedPnl / p.size) * (p.size - qty),
+              }
+            : p
+        )
+      );
+    }
+    setCloseModalPosition(null);
+    setCloseMode('full');
+    setPartialCloseQty('1');
+  }
+
   useEffect(() => {
     if (!selectedOption) {
       setLimitPrice('');
