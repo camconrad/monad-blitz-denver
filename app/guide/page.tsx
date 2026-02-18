@@ -88,10 +88,10 @@ function GuideContext() {
       </p>
       <div className="grid grid-cols-5 gap-x-4 gap-y-2 text-sm">
         {rows.map(({ label, value, sub }) => (
-          <div key={label}>
+          <div key={label} className="min-w-0">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
             <p className="mt-0.5 font-semibold text-foreground">{value}</p>
-            {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+            {sub && <p className="text-xs text-muted-foreground mt-0.5 truncate" title={sub}>{sub}</p>}
           </div>
         ))}
       </div>
@@ -411,7 +411,7 @@ export default function GuidePage() {
               </div>
 
               <div className="relative z-10 text-center px-6 pt-36">
-                <p className="text-lg tracking-tight text-foreground/90 font-bold max-w-xs mx-auto mt-24 mb-8">
+                <p className={`text-lg tracking-tight font-bold max-w-xs mx-auto mt-24 mb-8 ${isActive ? 'text-white' : 'text-foreground/90'}`}>
                   {isActive ? 'Listening on Monad' : 'Speak. Get clarity.'}
                 </p>
                 <Button

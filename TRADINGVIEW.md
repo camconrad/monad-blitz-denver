@@ -10,6 +10,7 @@ We use the **Advanced Chart widget** — the free, copy-paste iframe embed that 
 
 - **Component:** `components/tradingview-chart.tsx`
 - **Usage:** `<TradingViewChart symbol={selectedAsset} />` on `app/trade/page.tsx`
+- **Data source:** Chart symbols use **Coinbase** (e.g. `COINBASE:MONUSD`). We avoid Binance; TradingView does not yet list any Monad DEX (Monday Trade, Atlantis, etc.). Options settlement uses **Chainlink** on Monad — the chart is reference only.
 - **Docs:** [Advanced Chart widget](https://www.tradingview.com/widget-docs/widgets/charts/advanced-chart/), [Widget integration](https://www.tradingview.com/widget-docs/tutorials/iframe/build-page/widget-integration/)
 
 **Best practices that apply today:**

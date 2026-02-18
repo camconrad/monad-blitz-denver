@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { motion } from 'motion/react';
 import { TrendingUp, TrendingDown, ChevronUp, ChevronDown, X, Eye } from 'lucide-react';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
@@ -344,12 +345,12 @@ export default function TradePage() {
             <div className="border border-border rounded-lg card-glass p-3">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="font-bold text-primary">Ξ</span>
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                    <Image src="/logo.png" alt="MON" width={40} height={40} className="w-full h-full object-cover rounded-full" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">{selectedAsset}</h2>
-                    <p className="text-xs text-muted-foreground">Ethereum / US Dollar</p>
+                    <p className="text-xs text-muted-foreground">Monad / US Dollar</p>
                   </div>
                 </div>
 

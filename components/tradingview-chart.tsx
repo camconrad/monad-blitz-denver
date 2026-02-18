@@ -6,13 +6,17 @@ import { useTheme } from 'next-themes';
 const WIDGET_SCRIPT_URL =
   'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
 
-/** Map app symbol (e.g. ETH-USD) to TradingView symbol. */
+/**
+ * Map app symbol (e.g. MON-USD) to TradingView symbol.
+ * Uses Coinbase (not Binance). TradingView does not yet support Monad DEXes
+ * (e.g. Monday Trade, Atlantis); options settle via Chainlink on Monad.
+ */
 function getTradingViewSymbol(asset: string): string {
   const normalized = asset.replace('-', '');
-  if (asset.startsWith('ETH')) return `BINANCE:ETHUSDT`;
-  if (asset.startsWith('BTC')) return `BINANCE:BTCUSDT`;
-  if (asset.startsWith('MON')) return `BINANCE:MONUSDT`;
-  return `BINANCE:${normalized}USDT`;
+  if (asset.startsWith('ETH')) return `COINBASE:ETHUSD`;
+  if (asset.startsWith('BTC')) return `COINBASE:BTCUSD`;
+  if (asset.startsWith('MON')) return `COINBASE:MONUSD`;
+  return `COINBASE:${normalized}USD`;
 }
 
 export interface TradingViewChartProps {
