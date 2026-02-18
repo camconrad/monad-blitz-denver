@@ -75,3 +75,8 @@ export const SYMBOL_TO_FEED: Record<string, `0x${string}`> = {
   'USDC-USD': CHAINLINK_MONAD.USDC_USD,
   'USDT-USD': CHAINLINK_MONAD.USDT_USD,
 };
+
+/** Feed address → symbol (for positions from contract) */
+export const FEED_TO_SYMBOL: Record<string, string> = Object.fromEntries(
+  (Object.entries(SYMBOL_TO_FEED) as [string, string][]).map(([sym, feed]) => [feed.toLowerCase(), sym])
+);

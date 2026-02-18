@@ -2,15 +2,15 @@
 pragma solidity ^0.8.20;
 
 import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
+import {ReentrancyGuard} from "./ReentrancyGuard.sol";
 
 /**
  * @title GammaGuide
  * @notice European cash-settled options against tokens using Chainlink oracles (Monad).
  * @dev Buy call/put options; settle at expiry using the underlying's USD price feed.
- *      Follows Checks-Effects-Interactions: all state updates and events occur before
- *      any external calls (transferFrom/transfer) to prevent reentrancy.
+ *      Uses ReentrancyGuard and CEI (Checks-Effects-Interactions) for reentrancy safety.
  */
-contract GammaGuide {
+contract GammaGuide is ReentrancyGuard {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -106,8 +106,11 @@ contract GammaGuide {
     error AlreadySettled();       // Option already settled
     error StalePrice(uint256 updatedAt, uint256 maxAge);  // Price too old
     error PriceNotYetAvailable(uint256 updatedAt, uint256 expiryTs);  // No round at/after expiry
+    error InvalidPriceData();  // Chainlink round invalid or answer <= 0
     error OnlyOwner();            // Caller is not owner
     error ContractPaused();       // buyOption disabled when paused
+    error ZeroAddress();          // Required address is zero
+    error MaxPriceAgeTooLow();   // maxPriceAge must be >= 1 (prevents settle DoS)
 
     // -------------------------------------------------------------------------
     // Constructor & admin
@@ -115,6 +118,7 @@ contract GammaGuide {
 
     /// @param _quoteToken Token for premiums and payouts (e.g. USDC)
     constructor(address _quoteToken) {
+        if (_quoteToken == address(0)) revert ZeroAddress();
         owner = msg.sender;
         quoteToken = _quoteToken;
         maxPriceAge = 1 hours;
@@ -131,12 +135,14 @@ contract GammaGuide {
     /// @param feed Chainlink proxy address
     /// @param allowed True to allow as underlying
     function setAllowedFeed(address feed, bool allowed) external onlyOwner {
+        if (feed == address(0)) revert ZeroAddress();
         allowedFeeds[feed] = allowed;
         emit FeedAllowed(feed, allowed);
     }
 
-    /// @param _maxPriceAge Max seconds since price update when settling
+    /// @param _maxPriceAge Max seconds since price update when settling (min 1 to avoid settle DoS)
     function setMaxPriceAge(uint256 _maxPriceAge) external onlyOwner {
+        if (_maxPriceAge < 1) revert MaxPriceAgeTooLow();
         maxPriceAge = _maxPriceAge;
         emit MaxPriceAgeSet(_maxPriceAge);
     }
@@ -149,12 +155,14 @@ contract GammaGuide {
 
     /// @param _owner New owner
     function setOwner(address _owner) external onlyOwner {
+        if (_owner == address(0)) revert ZeroAddress();
         owner = _owner;
         emit OwnerSet(_owner);
     }
 
     /// @param _quoteToken New quote token for premiums/payouts
     function setQuoteToken(address _quoteToken) external onlyOwner {
+        if (_quoteToken == address(0)) revert ZeroAddress();
         quoteToken = _quoteToken;
         emit QuoteTokenSet(_quoteToken);
     }
@@ -167,8 +175,16 @@ contract GammaGuide {
     /// @param feed Chainlink price feed proxy
     /// @return price Latest answer (8 decimals)
     /// @return updatedAt Timestamp when price was updated
+    /// @dev Reverts if round data is invalid (roundId 0 or stale).
     function getLatestPrice(address feed) public view returns (int256 price, uint256 updatedAt) {
-        (, int256 answer, , uint256 updatedAt_, ) = IAggregatorV3(feed).latestRoundData();
+        (
+            uint80 roundId,
+            int256 answer,
+            ,
+            uint256 updatedAt_,
+            uint80 answeredInRound
+        ) = IAggregatorV3(feed).latestRoundData();
+        if (roundId == 0 || answer <= 0 || answeredInRound < roundId) revert InvalidPriceData();
         return (answer, updatedAt_);
     }
 
@@ -215,8 +231,9 @@ contract GammaGuide {
         uint256 strikePrice,
         uint256 expiryTs,
         uint256 premiumAmount
-    ) external returns (uint256 optionId) {
+    ) external nonReentrant returns (uint256 optionId) {
         if (paused) revert ContractPaused();
+        if (underlyingFeed == address(0)) revert ZeroAddress();
         if (!allowedFeeds[underlyingFeed]) revert FeedNotAllowed();
         if (expiryTs <= block.timestamp) revert ExpiryInPast();
         if (expiryTs > block.timestamp + 365 days) revert ExpiryTooFar();
@@ -257,7 +274,7 @@ contract GammaGuide {
     /// @param optionId Option to settle
     /// @return payoutAmount Quote token amount sent to buyer
     /// @dev Requires updatedAt >= expiry and price not older than maxPriceAge.
-    function settle(uint256 optionId) external returns (uint256 payoutAmount) {
+    function settle(uint256 optionId) external nonReentrant returns (uint256 payoutAmount) {
         Option storage opt = options[optionId];
         if (opt.buyer == address(0)) revert OptionNotFound();
         if (block.timestamp < opt.expiryTs) revert NotExpired();

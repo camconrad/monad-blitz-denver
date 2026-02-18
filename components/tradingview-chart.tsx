@@ -65,7 +65,8 @@ export function TradingViewChart({
     const config = {
       autosize: true,
       symbol: tvSymbol,
-      interval: 'D',
+      interval: '60',
+      range: '1D',
       timezone: 'Etc/UTC',
       theme: colorTheme,
       style: '1',

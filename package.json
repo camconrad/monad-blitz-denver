@@ -10,7 +10,10 @@
     "lint": "next lint",
     "c": "convex dev",
     "cd": "convex deploy --yes",
-    "test:elevenlabs": "node scripts/test-elevenlabs.mjs"
+    "test:elevenlabs": "node scripts/test-elevenlabs.mjs",
+    "test:coingecko": "node scripts/test-coingecko.mjs",
+    "deploy:contract": "node scripts/deploy-contract.mjs",
+    "verify:contract": "node scripts/verify-contract.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",

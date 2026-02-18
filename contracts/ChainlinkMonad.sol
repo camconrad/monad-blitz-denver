@@ -49,7 +49,7 @@ library ChainlinkMonad {
     address internal constant TIA_USD = 0x31938934512dFFf3c410a6D07CeAF5F38B66BFee;
     address internal constant UNI_USD = 0x8Cc589634A0B5959Fb29fc1111CFf26356b11918;
     address internal constant USD1_USD = 0xa63564f2A626f69130C1CCA87f984351B26Cf2f1;
-    address internal constant USDC_USD = 0xf5F15f188AbCb0d165D1Edb7f37F7d6fA2fCebec;
+    address internal constant USDC_USD = 0xf5F15f188AbCB0d165D1Edb7f37F7d6fA2fCebec;
     address internal constant USDE_USD = 0x6b5902EABcE27C23FC97ea136504395b4d22C1FD;
     address internal constant USDS_USD = 0xa16212CD5b330583B346167fA91E138d41AEe8CC;
     address internal constant USDT_USD = 0x1a1Be4c184923a6BFF8c27cfDf6ac8bDE4DE00FC;

@@ -17,7 +17,11 @@ interface IAggregatorV3 {
     function version() external view returns (uint256);
 
     /// @param _roundId Round to query
-    /// @return roundId, answer, startedAt, updatedAt, answeredInRound
+    /// @return roundId Round identifier
+    /// @return answer Price
+    /// @return startedAt Start time
+    /// @return updatedAt Update time
+    /// @return answeredInRound Round that answered
     function getRoundData(
         uint80 _roundId
     )
@@ -31,7 +35,11 @@ interface IAggregatorV3 {
             uint80 answeredInRound
         );
 
-    /// @return roundId, answer (price), startedAt, updatedAt, answeredInRound
+    /// @return roundId Round identifier
+    /// @return answer Price
+    /// @return startedAt Start time
+    /// @return updatedAt Update time
+    /// @return answeredInRound Round that answered
     function latestRoundData()
         external
         view

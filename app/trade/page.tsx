@@ -3,7 +3,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'motion/react';
-import { TrendingUp, TrendingDown, ChevronUp, ChevronDown, X, Eye } from 'lucide-react';
+import { ChevronUp, ChevronDown, X, Eye } from 'lucide-react';
+import { useAccount, useBalance, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,10 +20,14 @@ import {
   type StrikeRow,
 } from '@/lib/options-chain';
 import { cn } from '@/lib/utils';
+import { useMonadMarket } from '@/lib/use-spot-prices';
 import { createCoachBus } from '@/lib/voice-coach-bus';
 import type { CoachBusEnvelope } from '@/lib/voice-coach-bus';
+import { getGammaGuideAddress } from '@/lib/gamma-guide-address';
+import { useGammaGuidePositions } from '@/lib/use-gamma-guide-positions';
+import { gammaGuideAbi } from '@/lib/abi/gamma-guide';
+import { SYMBOL_TO_FEED } from '@/lib/chainlink-monad';
 
-// Mock types for positions (replace with real data/API later)
 type OpenPosition = {
   id: string;
   symbol: string;
@@ -34,6 +39,8 @@ type OpenPosition = {
   markPrice: number;
   liqPrice: number | null;
   unrealizedPnl: number;
+  optionId?: number;
+  canSettle?: boolean;
 };
 
 type ClosedPosition = {
@@ -84,6 +91,19 @@ export default function TradePage() {
   const [liveTranscript, setLiveTranscript] = useState<string | undefined>(undefined);
   const busRef = useRef<ReturnType<typeof createCoachBus> | null>(null);
 
+  const { address } = useAccount();
+  const { data: nativeBalance } = useBalance({ address });
+  const contractAddress = getGammaGuideAddress();
+  const { open: chainOpen, closed: chainClosed, isLoading: positionsLoading, refetch: refetchPositions } = useGammaGuidePositions();
+  const openPositionsDisplay: OpenPosition[] = contractAddress ? (chainOpen as OpenPosition[]) : openPositions;
+  const closedPositionsDisplay: ClosedPosition[] = contractAddress ? (chainClosed as ClosedPosition[]) : closedPositions;
+
+  const { writeContract, isPending: isWritePending, error: writeError } = useWriteContract();
+
+  function expiryDateToUnix(expiryStr: string): number {
+    return Math.floor(new Date(expiryStr + 'T23:59:59.000Z').getTime() / 1000);
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     busRef.current = createCoachBus();
@@ -130,20 +150,44 @@ export default function TradePage() {
       orderType,
       quantity,
       limitPrice: orderType === 'limit' ? limitPrice : undefined,
-      openCount: openPositions.length,
-      closedCount: closedPositions.length,
-      openPositions: openPositions.slice(0, 10).map((p) => ({ id: p.id, symbol: p.symbol, expiry: p.expiry, strike: p.strike, side: p.side, size: p.size, unrealizedPnl: p.unrealizedPnl })),
-      closedPositions: closedPositions.slice(0, 5).map((p) => ({ id: p.id, symbol: p.symbol, realizedPnl: p.realizedPnl })),
+      openCount: openPositionsDisplay.length,
+      closedCount: closedPositionsDisplay.length,
+      openPositions: openPositionsDisplay.slice(0, 10).map((p) => ({ id: p.id, symbol: p.symbol, expiry: p.expiry, strike: p.strike, side: p.side, size: p.size, unrealizedPnl: p.unrealizedPnl })),
+      closedPositions: closedPositionsDisplay.slice(0, 5).map((p) => ({ id: p.id, symbol: p.symbol, realizedPnl: p.realizedPnl })),
     };
-  }, [selectedAsset, selectedOption, openPositions, closedPositions, orderSide, orderType, quantity, limitPrice]);
+  }, [selectedAsset, selectedOption, openPositionsDisplay, closedPositionsDisplay, orderSide, orderType, quantity, limitPrice]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !busRef.current) return;
     busRef.current.publish('trading.context', tradingContextPayload);
   }, [tradingContextPayload]);
 
+  const { data: monadMarket, loading: monadLoading } = useMonadMarket();
+  const hasRealMonadData = monadMarket != null;
   const chain = chainSnapshot.chainsByExpiry[selectedExpiry] ?? [];
   const spot = chainSnapshot.spot;
+  // Real MON-USD from CoinGecko (5s timeout); show loading until we have it
+  const displaySpot = monadMarket?.price ?? chainSnapshot.spot;
+  const high24h = monadMarket?.high24h ?? displaySpot * 1.04;
+  const low24h = monadMarket?.low24h ?? displaySpot * 0.96;
+  const change24h = monadMarket?.change24h ?? 2.4;
+  const vol24h = monadMarket?.volume24h;
+  const vol24hFormatted = vol24h != null
+    ? vol24h >= 1e9
+      ? `$${(vol24h / 1e9).toFixed(1)}B`
+      : vol24h >= 1e6
+        ? `$${(vol24h / 1e6).toFixed(1)}M`
+        : vol24h >= 1e3
+          ? `$${(vol24h / 1e3).toFixed(1)}K`
+          : `$${vol24h.toFixed(0)}`
+    : null;
+
+  const portfolioValueUsd = useMemo(() => {
+    if (!address || !nativeBalance?.value) return null;
+    const monAmount = Number(nativeBalance.value) / 1e18;
+    if (displaySpot <= 0) return null;
+    return monAmount * displaySpot;
+  }, [address, nativeBalance?.value, displaySpot]);
 
   const selectedQuote = selectedOption
     ? selectedOption.row[selectedOption.side]
@@ -289,7 +333,13 @@ export default function TradePage() {
             </Badge>
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Portfolio Value</p>
-              <p className="text-sm font-semibold">$125,430.50</p>
+              <p className="text-sm font-semibold">
+                {!address
+                  ? '$0.00'
+                  : portfolioValueUsd != null
+                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(portfolioValueUsd)
+                    : '$0.00'}
+              </p>
             </div>
             <WalletAvatar className="shrink-0" />
           </div>
@@ -357,15 +407,15 @@ export default function TradePage() {
                 <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 text-sm">
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h High</p>
-                    <p className="font-semibold">$3,285.20</p>
+                    <p className="font-semibold">{!hasRealMonadData && monadLoading ? '…' : `$${high24h.toFixed(2)}`}</p>
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h Low</p>
-                    <p className="font-semibold">$3,156.40</p>
+                    <p className="font-semibold">{!hasRealMonadData && monadLoading ? '…' : `$${low24h.toFixed(2)}`}</p>
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Volume</p>
-                    <p className="font-semibold">$2.4B</p>
+                    <p className="font-semibold">{!hasRealMonadData && monadLoading ? '…' : (vol24hFormatted ?? '—')}</p>
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">IV Rank</p>
@@ -374,13 +424,19 @@ export default function TradePage() {
                 </div>
                 
                 <div className="text-right shrink-0">
-                  <p className="text-2xl font-bold">$3,245.80</p>
+                  <p className="text-2xl font-bold">{!hasRealMonadData && monadLoading ? '…' : `$${displaySpot.toFixed(2)}`}</p>
                   <div className={cn(
                     'flex items-center justify-end gap-1 text-sm',
-                    2.4 >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                    change24h >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   )}>
-                    {2.4 >= 0 ? <ChevronUp className="w-5 h-5 shrink-0" fill="currentColor" /> : <ChevronDown className="w-5 h-5 shrink-0" fill="currentColor" />}
-                    <span>{2.4 >= 0 ? '+' : ''}{2.4}% (24h)</span>
+                    {!hasRealMonadData && monadLoading ? (
+                      <span>…</span>
+                    ) : (
+                      <>
+                        {change24h >= 0 ? <ChevronUp className="w-5 h-5 shrink-0" fill="currentColor" /> : <ChevronDown className="w-5 h-5 shrink-0" fill="currentColor" />}
+                        <span>{change24h >= 0 ? '+' : ''}{change24h.toFixed(1)}% (24h)</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -405,9 +461,9 @@ export default function TradePage() {
                   )}
                 >
                   Open Positions
-                  {openPositions.length > 0 && (
+                  {openPositionsDisplay.length > 0 && (
                     <Badge variant="secondary" className="ml-2 text-xs font-normal">
-                      {openPositions.length}
+                      {openPositionsDisplay.length}
                     </Badge>
                   )}
                 </button>
@@ -427,8 +483,12 @@ export default function TradePage() {
               <div className="flex-1 overflow-auto p-1.5">
                 {positionsTab === 'open' && (
                   <>
-                    {openPositions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-8 text-center">No positions yet</p>
+                    {positionsLoading ? (
+                      <p className="text-sm text-muted-foreground py-8 text-center">Loading positions…</p>
+                    ) : openPositionsDisplay.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-8 text-center">
+                        {contractAddress ? 'No open positions on chain' : 'No positions yet'}
+                      </p>
                     ) : (
                       <div className="min-w-[640px]">
                         <div className="text-[10px] text-muted-foreground grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_0.8fr_1fr_auto] gap-2 pb-2 border-b border-border mb-2">
@@ -441,7 +501,7 @@ export default function TradePage() {
                           <span className="text-right">Unrealized PnL</span>
                           <span className="w-20 text-right">Actions</span>
                         </div>
-                        {openPositions.map((pos) => (
+                        {openPositionsDisplay.map((pos) => (
                           <div
                             key={pos.id}
                             className="text-xs grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_0.8fr_1fr_auto] gap-2 py-2 px-1 rounded border border-transparent hover:bg-muted/30 items-center"
@@ -456,19 +516,40 @@ export default function TradePage() {
                               {pos.unrealizedPnl >= 0 ? '+' : ''}${pos.unrealizedPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             <div className="flex items-center justify-end gap-0.5">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-1.5 text-muted-foreground hover:text-destructive"
-                                aria-label="Close position"
-                                onClick={() => {
-                                  setCloseModalPosition(pos);
-                                  setCloseMode('full');
-                                  setPartialCloseQty(String(pos.size > 1 ? 1 : 1));
-                                }}
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </Button>
+                              {pos.optionId != null && pos.canSettle && contractAddress ? (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-7 px-1.5"
+                                  aria-label="Settle option"
+                                  disabled={isWritePending}
+                                  onClick={() => {
+                                    writeContract({
+                                      address: contractAddress,
+                                      abi: gammaGuideAbi,
+                                      functionName: 'settle',
+                                      args: [BigInt(pos.optionId!)],
+                                    });
+                                    refetchPositions();
+                                  }}
+                                >
+                                  Settle
+                                </Button>
+                              ) : !contractAddress ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-1.5 text-muted-foreground hover:text-destructive"
+                                  aria-label="Close position"
+                                  onClick={() => {
+                                    setCloseModalPosition(pos);
+                                    setCloseMode('full');
+                                    setPartialCloseQty(String(pos.size > 1 ? 1 : 1));
+                                  }}
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              ) : null}
                             </div>
                           </div>
                         ))}
@@ -478,8 +559,10 @@ export default function TradePage() {
                 )}
                 {positionsTab === 'closed' && (
                   <>
-                    {closedPositions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-8 text-center">No closed positions yet</p>
+                    {closedPositionsDisplay.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-8 text-center">
+                        {contractAddress ? 'No closed positions on chain' : 'No closed positions yet'}
+                      </p>
                     ) : (
                       <div className="min-w-[640px]">
                         <div className="text-[10px] font-mono text-muted-foreground grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_1fr_1.2fr_auto] gap-2 pb-2 border-b border-border mb-2">
@@ -492,7 +575,7 @@ export default function TradePage() {
                           <span>Closed</span>
                           <span className="w-10" />
                         </div>
-                        {closedPositions.map((pos) => (
+                        {closedPositionsDisplay.map((pos) => (
                           <div
                             key={pos.id}
                             className="text-xs font-mono grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_1fr_1.2fr_auto] gap-2 py-2 px-1 rounded border border-transparent hover:bg-muted/30 items-center"
@@ -562,7 +645,6 @@ export default function TradePage() {
                       className="text-xs h-7 px-2"
                       onClick={() => setChainView('calls')}
                     >
-                      <TrendingUp className="w-3 h-3 mr-1" />
                       Calls
                     </Button>
                     <Button
@@ -571,7 +653,6 @@ export default function TradePage() {
                       className="text-xs h-7 px-2"
                       onClick={() => setChainView('puts')}
                     >
-                      <TrendingDown className="w-3 h-3 mr-1" />
                       Puts
                     </Button>
                   </div>
@@ -581,13 +662,13 @@ export default function TradePage() {
               {/* Compact underlying bar (pro-style) */}
               <div className="text-[10px] text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-0.5 py-1.5 px-2 rounded bg-muted/20 border border-border/50 mb-1">
                 <span>{chainSnapshot.symbol}</span>
-                <span>Last: <span className="text-foreground font-medium">${spot.toFixed(2)}</span></span>
-                <span className="text-green-600 dark:text-green-400">Net Chg: +2.4%</span>
-                <span>Bid: <span className="text-green-600 dark:text-green-400">$3,245.50</span></span>
-                <span>Ask: <span className="text-red-600 dark:text-red-400">$3,246.10</span></span>
-                <span>High: $3,285.20</span>
-                <span>Low: $3,156.40</span>
-                <span>Vol: $2.4B</span>
+                <span>Last: <span className="text-foreground font-medium">${displaySpot.toFixed(2)}</span></span>
+                <span className={cn(change24h >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>Net Chg: {change24h >= 0 ? '+' : ''}{change24h.toFixed(1)}%</span>
+                <span>Bid: <span className="text-green-600 dark:text-green-400">${(displaySpot * 0.995).toFixed(2)}</span></span>
+                <span>Ask: <span className="text-red-600 dark:text-red-400">${(displaySpot * 1.005).toFixed(2)}</span></span>
+                <span>High: ${high24h.toFixed(2)}</span>
+                <span>Low: ${low24h.toFixed(2)}</span>
+                <span>Vol: {vol24hFormatted ?? '—'}</span>
               </div>
 
               <div className="flex-1 overflow-auto">
@@ -892,27 +973,51 @@ export default function TradePage() {
                 <Button
                   className="w-full"
                   size="lg"
-                  disabled={!selectedOption}
+                  disabled={!selectedOption || (contractAddress && (isWritePending || orderSide !== 'buy' || parseFloat(quantity) !== 1))}
                   onClick={() => {
-                    if (!busRef.current || !selectedOption) return;
+                    if (!selectedOption) return;
                     const symbol = typeof selectedAsset === 'string' ? selectedAsset : (selectedAsset as { symbol?: string })?.symbol ?? 'UNKNOWN';
-                    busRef.current.publish('trading.intent', {
-                      intent: 'open',
-                      symbol,
-                      details: {
-                        expiry: selectedOption.expiry,
-                        strike: selectedOption.strike,
-                        side: selectedOption.side,
-                        orderSide,
-                        quantity: quantity,
-                        orderType,
-                        limitPrice: orderType === 'limit' ? limitPrice : undefined,
-                      },
-                    });
+                    if (contractAddress && orderSide === 'buy') {
+                      const feed = SYMBOL_TO_FEED[symbol];
+                      if (!feed) return;
+                      const strikePrice8 = BigInt(Math.round(selectedOption.strike * 1e8));
+                      const expiryTs = BigInt(expiryDateToUnix(selectedOption.expiry));
+                      const premiumPerContract = (orderType === 'market' ? defaultLimit : displayLimit) * CONTRACT_MULTIPLIER;
+                      const premiumAmount = BigInt(Math.round(premiumPerContract * 1e6));
+                      writeContract({
+                        address: contractAddress,
+                        abi: gammaGuideAbi,
+                        functionName: 'buyOption',
+                        args: [feed, selectedOption.side === 'call', strikePrice8, expiryTs, premiumAmount],
+                      });
+                      refetchPositions();
+                    }
+                    if (busRef.current) {
+                      busRef.current.publish('trading.intent', {
+                        intent: 'open',
+                        symbol,
+                        details: {
+                          expiry: selectedOption.expiry,
+                          strike: selectedOption.strike,
+                          side: selectedOption.side,
+                          orderSide,
+                          quantity,
+                          orderType,
+                          limitPrice: orderType === 'limit' ? limitPrice : undefined,
+                        },
+                      });
+                    }
                   }}
                 >
-                  {orderType === 'market' ? 'Place Market Order' : 'Place Limit Order'}
+                  {contractAddress && orderSide === 'buy'
+                    ? (isWritePending ? 'Confirm in wallet…' : 'Place order (1 contract)')
+                    : orderType === 'market'
+                      ? 'Place Market Order'
+                      : 'Place Limit Order'}
                 </Button>
+                {writeError && (
+                  <p className="text-xs text-destructive mt-1">{writeError.message}</p>
+                )}
 
                 <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-border">
                   {orderGreeks ? (
@@ -1032,7 +1137,7 @@ export default function TradePage() {
 
       {/* View closed position modal */}
       {viewClosedId && (() => {
-        const pos = closedPositions.find((p) => p.id === viewClosedId);
+        const pos = closedPositionsDisplay.find((p) => p.id === viewClosedId);
         if (!pos) return null;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true" aria-labelledby="view-closed-title">

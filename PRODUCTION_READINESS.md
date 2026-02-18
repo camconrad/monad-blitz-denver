@@ -11,8 +11,8 @@ Recommended order: **UI polish → Deploy contracts → Integrate → Run tests*
 | Phase | Tasks | Owner |
 |-------|--------|--------|
 | **1. Minor UI touch** | ~~Fix remaining lints (aria-selected on trade page)~~; final copy/spacing; ensure Guide context, ticker, and trade layout match design. | Dev |
-| **2. Deploy contracts** | Deploy `GammaGuide(quoteToken)` on Monad testnet; configure `allowedFeeds` (Chainlink ETH/USD); fund contract with quote token for payouts; note deployed address. | Dev / ops |
-| **3. Integrate** | Wire app to deployed contract: set contract address in env (e.g. `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`); point wagmi/abis to deployed address; verify buy option, positions, settle, and pause flows. | Dev |
+| **2. Deploy contracts** | Audit: see `AUDIT.md`. Run `yarn deploy:contract` (Foundry). Deployer: `0x1433dF88aa130363B523f3f452C05854C0a02084`. Set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`; fund contract with quote token for payouts. | Dev / ops |
+| **3. Integrate** | ~~Wire app to contract~~ Done: set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`; Trade page uses GammaGuide for positions, buyOption (1 contract), and settle. | Dev |
 | **4. Run tests** | E2E: connect wallet, view chain, buy option, view position, settle (or wait for expiry); smoke test Guide (voice → Convex → playback); verify price/spot from CoinGecko. | Dev / QA |
 
 ---
@@ -55,6 +55,9 @@ Recommended order: **UI polish → Deploy contracts → Integrate → Run tests*
 | COINGECKO_API_KEY | Vercel, .env.local | Optional (higher rate limit) |
 | NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID | Vercel, .env.local | Yes for wallet connect |
 | NEXT_PUBLIC_MONAD_TESTNET_RPC_URL | Optional override | Default: testnet RPC |
+| NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS | Vercel, .env.local | After deploy; Trade page contract |
+| DEPLOYER_PRIVATE_KEY | .env.local only (never commit) | Forge deploy script |
+| MONAD_RPC_URL | .env.local for deploy | Default: https://testnet-rpc.monad.xyz |
 
 ---
 

@@ -1,9 +1,14 @@
 [profile.default]
 src = "contracts"
 out = "out"
-# libs = ["lib"]  # uncomment if using forge install deps
+libs = ["lib"]
 solc = "0.8.20"
 evm_version = "cancun"
+# Store source in JSON (avoids verification timeout / IPFS)
+metadata = true
+metadata_hash = "none"
+use_literal_content = true
 
 [rpc_endpoints]
 monad = "${MONAD_RPC_URL}"
+monad_mainnet = "https://rpc.monad.xyz"
