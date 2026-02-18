@@ -79,12 +79,12 @@ function GuideContext() {
     },
   ];
 
-  const coachSummary = `${symbol} ${spotFormatted}, ${formatExpiryShort(nearestExpiry)} call spread ${callSpreadShort}/${callSpreadLong}, defined risk, cash-settled on Monad.`;
+  const guideSummary = `${symbol} ${spotFormatted}, ${formatExpiryShort(nearestExpiry)} call spread ${callSpreadShort}/${callSpreadLong}, defined risk, cash-settled on Monad.`;
 
   return (
     <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
       <p className="text-xs text-muted-foreground border-b border-border/60 pb-2">
-        Context for coach: {coachSummary}
+        Context for guide: {guideSummary}
       </p>
       <div className="grid grid-cols-5 gap-x-4 gap-y-2 text-sm">
         {rows.map(({ label, value, sub }) => (
@@ -108,7 +108,7 @@ export default function GuidePage() {
   const [processing, setProcessing] = useState(false);
   const [sessionId, setSessionId] = useState<Id<'voiceSessions'> | null>(null);
   const [transcript, setTranscript] = useState('');
-  const [coachText, setCoachText] = useState('');
+  const [guideText, setGuideText] = useState('');
   const [lastError, setLastError] = useState<string | undefined>(undefined);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -130,28 +130,34 @@ export default function GuidePage() {
     };
   }, []);
 
-  const coachAudioRef = useRef<HTMLAudioElement | null>(null);
-  const lastCoachAudioUrlRef = useRef<string | null>(null);
+  const guideAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastGuideAudioUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
     if (session.transcript !== undefined) setTranscript(session.transcript);
-    if (session.coachText !== undefined) setCoachText(session.coachText);
-    if (session.coachPartial !== undefined) setCoachText(session.coachPartial);
+    if (session.coachText !== undefined) setGuideText(session.coachText);
+    if (session.coachPartial !== undefined) setGuideText(session.coachPartial);
     if (session.error) setLastError(session.error);
     if (session.transcript ?? session.coachText ?? session.error) setProcessing(false);
   }, [session]);
 
   useEffect(() => {
     const url = session?.coachAudioUrl;
-    if (!url || url === lastCoachAudioUrlRef.current) return;
-    lastCoachAudioUrlRef.current = url;
+    if (!url || url === lastGuideAudioUrlRef.current) return;
+    lastGuideAudioUrlRef.current = url;
     const audio = new Audio(url);
-    coachAudioRef.current = audio;
-    audio.play().catch(() => {});
+    guideAudioRef.current = audio;
+    const onError = () => {
+      lastGuideAudioUrlRef.current = null;
+      guideAudioRef.current = null;
+    };
+    audio.addEventListener('error', onError);
+    audio.play().catch(onError);
     return () => {
+      audio.removeEventListener('error', onError);
       audio.pause();
-      coachAudioRef.current = null;
+      guideAudioRef.current = null;
     };
   }, [session?.coachAudioUrl]);
 
@@ -159,7 +165,7 @@ export default function GuidePage() {
     if (typeof window === 'undefined') return;
     setLastError(undefined);
     setTranscript('');
-    setCoachText('');
+    setGuideText('');
 
     if (useConvex && createSession) {
       try {
@@ -223,10 +229,10 @@ export default function GuidePage() {
             busRef.current?.publish('coach.transcript.final', { text: t });
             break;
           case 'coach_response_partial':
-            setCoachText((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
+            setGuideText((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
             break;
           case 'coach_response_final':
-            setCoachText((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
+            setGuideText((prev) => (prev ? prev.replace(/\s*$/, '') + (t ? ' ' + t : '') : t));
             break;
           case 'suggestion':
             busRef.current?.publish('coach.suggestion', msg);
@@ -324,7 +330,7 @@ export default function GuidePage() {
   }
 
   const isActive = listening;
-  const isProcessing = processing && !transcript && !coachText && !lastError;
+  const isProcessing = processing && !transcript && !guideText && !lastError;
   const needsBackend = !convexUrl && !wsUrl;
   const hasError = !!lastError || needsBackend;
   const errorMessage =
@@ -411,7 +417,7 @@ export default function GuidePage() {
               </div>
 
               <div className="relative z-10 text-center px-6 pt-36">
-                <p className={`text-lg tracking-tight font-bold max-w-xs mx-auto mt-24 mb-8 ${isActive ? 'text-white' : 'text-foreground/90'}`}>
+                <p className="text-lg tracking-tight text-foreground/90 font-bold max-w-xs mx-auto mt-24 mb-8">
                   {isActive ? 'Listening on Monad' : 'Speak. Get clarity.'}
                 </p>
                 <Button
@@ -420,7 +426,7 @@ export default function GuidePage() {
                   onClick={() => (isActive ? stopCapture() : startCapture())}
                   className={
                     isActive
-                      ? 'rounded-full px-10 py-6 text-sm font-medium border border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive/60 transition-colors'
+                      ? 'rounded-full px-10 py-6 text-sm font-medium border border-destructive/40 text-white hover:bg-destructive/30 hover:border-destructive/60 transition-colors'
                       : 'rounded-full px-10 py-6 text-sm font-medium'
                   }
                 >
@@ -445,7 +451,7 @@ export default function GuidePage() {
             )}
 
             <div className="flex-1 rounded-lg border border-border/60 card-glass p-3 flex flex-col min-h-[120px] overflow-hidden">
-              {transcript || coachText ? (
+              {transcript || guideText ? (
                 <div className="space-y-2 text-sm">
                   {transcript && (
                     <div>
@@ -453,10 +459,10 @@ export default function GuidePage() {
                       <p className="font-light text-foreground">{transcript}</p>
                     </div>
                   )}
-                  {coachText && (
+                  {guideText && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">Coach</p>
-                      <p className="font-light text-foreground">{coachText}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">Guide</p>
+                      <p className="font-light text-foreground">{guideText}</p>
                     </div>
                   )}
                   {isProcessing && (
@@ -470,7 +476,7 @@ export default function GuidePage() {
                       {isProcessing ? 'Processing your message…' : 'Transcript appears here'}
                     </p>
                     <p className="text-[10px] mt-1.5 uppercase tracking-wider opacity-70">
-                      {isProcessing ? 'Coach will respond shortly' : 'Start to begin'}
+                      {isProcessing ? 'Guide will respond shortly' : 'Click begin to start'}
                     </p>
                   </div>
                 </div>

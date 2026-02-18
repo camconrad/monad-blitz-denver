@@ -10,7 +10,7 @@ Recommended order: **UI polish → Deploy contracts → Integrate → Run tests*
 
 | Phase | Tasks | Owner |
 |-------|--------|--------|
-| **1. Minor UI touch** | Fix remaining lints (e.g. aria-selected on trade page); final copy/spacing; ensure Guide context, ticker, and trade layout match design. | Dev |
+| **1. Minor UI touch** | ~~Fix remaining lints (aria-selected on trade page)~~; final copy/spacing; ensure Guide context, ticker, and trade layout match design. | Dev |
 | **2. Deploy contracts** | Deploy `GammaGuide(quoteToken)` on Monad testnet; configure `allowedFeeds` (Chainlink ETH/USD); fund contract with quote token for payouts; note deployed address. | Dev / ops |
 | **3. Integrate** | Wire app to deployed contract: set contract address in env (e.g. `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`); point wagmi/abis to deployed address; verify buy option, positions, settle, and pause flows. | Dev |
 | **4. Run tests** | E2E: connect wallet, view chain, buy option, view position, settle (or wait for expiry); smoke test Guide (voice → Convex → playback); verify price/spot from CoinGecko. | Dev / QA |
@@ -65,7 +65,7 @@ Recommended order: **UI polish → Deploy contracts → Integrate → Run tests*
 | Price cache | ✅ | /api/price revalidate 60s |
 | Convex subscription | ✅ | Real-time session updates |
 | Voice action | ⚠️ | Fire-and-forget; no client timeout (user waits for subscription) |
-| Next build | ⚠️ | Set outputFileTracingRoot if monorepo/extra lockfiles |
+| Next build | ✅ | outputFileTracingRoot set to process.cwd() to silence lockfile warning |
 
 ---
 

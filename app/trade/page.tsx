@@ -741,7 +741,7 @@ export default function TradePage() {
                       type="button"
                       role="tab"
                       onClick={() => setOrderSide('buy')}
-                      aria-selected={orderSide === 'buy' ? 'true' : 'false'}
+                      aria-selected={orderSide === 'buy'}
                       className={cn(
                         'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                         orderSide === 'buy' ? 'text-white' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -761,7 +761,7 @@ export default function TradePage() {
                       type="button"
                       role="tab"
                       onClick={() => setOrderSide('sell')}
-                      aria-selected={orderSide === 'sell' ? 'true' : 'false'}
+                      aria-selected={orderSide === 'sell'}
                       className={cn(
                         'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                         orderSide === 'sell' ? 'text-white' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -787,7 +787,7 @@ export default function TradePage() {
                       type="button"
                       role="tab"
                       onClick={() => setOrderType('limit')}
-                      aria-selected={orderType === 'limit' ? 'true' : 'false'}
+                      aria-selected={orderType === 'limit'}
                       className={cn(
                         'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                         orderType === 'limit' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -807,7 +807,7 @@ export default function TradePage() {
                       type="button"
                       role="tab"
                       onClick={() => setOrderType('market')}
-                      aria-selected={orderType === 'market' ? 'true' : 'false'}
+                      aria-selected={orderType === 'market'}
                       className={cn(
                         'relative z-0 flex-1 min-w-0 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                         orderType === 'market' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
