@@ -69,6 +69,13 @@ Recommended order: **UI polish → Deploy contracts → Integrate → Run tests*
 | Convex subscription | ✅ | Real-time session updates |
 | Voice action | ⚠️ | Fire-and-forget; no client timeout (user waits for subscription) |
 | Next build | ✅ | outputFileTracingRoot set to process.cwd() to silence lockfile warning |
+| WebSocket RPC | 📌 Optional | For lowest-latency blocks/logs, use an RPC with WebSocket support and `eth_subscribe` (see below). |
+
+### Real-time data (WebSocket RPC)
+
+For lower-latency block headers and contract events (e.g. option fills, settlements), use an RPC endpoint that supports **WebSocket** and **`eth_subscribe`**. Point wagmi/viem at a `ws://` or `wss://` URL and subscribe to `newHeads` or `logs` instead of polling.
+
+**Node operators:** WebSocket on Monad RPC requires the execution daemon to be configured with Execution Events and the RPC daemon with `--ws-enabled`. See [Set up Execution Events \| Monad Developer Documentation](https://docs.monad.xyz/guides/execution-events/setup) for the full setup (huge pages, event ring, RPC override).
 
 ---
 
