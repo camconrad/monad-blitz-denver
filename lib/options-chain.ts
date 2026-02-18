@@ -35,8 +35,9 @@ export interface OptionsChainSnapshot {
   chainsByExpiry: Record<string, StrikeRow[]>;
 }
 
-const SPOT = 3245.8;
-const STRIKES = [3000, 3050, 3100, 3150, 3200, 3250, 3300, 3350, 3400, 3450, 3500];
+// MON-USD: example Monad native asset (Chainlink MON_USD feed)
+const SPOT = 1.15;
+const STRIKES = [0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45];
 
 function mockQuote(
   strike: number,
@@ -99,7 +100,7 @@ export function getMockOptionsChain(): OptionsChainSnapshot {
     chainsByExpiry[expiry] = buildChainForExpiry(expiry, SPOT, 58 + i * 3);
   });
   return {
-    symbol: 'ETH-USD',
+    symbol: 'MON-USD',
     spot: SPOT,
     expirations: MOCK_EXPIRATIONS,
     chainsByExpiry,

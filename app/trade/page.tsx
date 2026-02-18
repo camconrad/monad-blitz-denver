@@ -57,7 +57,7 @@ function formatClosedAt(): string {
 }
 
 export default function TradePage() {
-  const [selectedAsset] = useState('ETH-USD');
+  const [selectedAsset] = useState('MON-USD');
   const chainSnapshot = useMemo(() => getMockOptionsChain(), []);
   const [selectedExpiry, setSelectedExpiry] = useState<string>(chainSnapshot.expirations[0]);
   const [chainView, setChainView] = useState<ChainView>('all');
@@ -733,9 +733,9 @@ export default function TradePage() {
                 </p>
               )}
               <div className="space-y-3">
-                <fieldset className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center border-0 p-0 m-0">
-                  <legend className="col-span-2 text-xs text-muted-foreground mb-0.5">Side</legend>
-                  <div className="col-start-2 flex items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5" role="tablist" aria-label="Side">
+                <fieldset className="space-y-1 border-0 p-0 m-0">
+                  <legend className="block text-xs text-muted-foreground mb-0.5">Side</legend>
+                  <div className="w-full flex items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5" role="tablist" aria-label="Side">
                     <button
                       type="button"
                       role="tab"
@@ -779,9 +779,9 @@ export default function TradePage() {
                   </div>
                 </fieldset>
 
-                <fieldset className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center border-0 p-0 m-0">
-                  <legend className="col-span-2 text-xs text-muted-foreground mb-0.5">Order Type</legend>
-                  <div className="col-start-2 flex items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5" role="tablist" aria-label="Order Type">
+                <fieldset className="space-y-1 border-0 p-0 m-0">
+                  <legend className="block text-xs text-muted-foreground mb-0.5">Order Type</legend>
+                  <div className="w-full flex items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5" role="tablist" aria-label="Order Type">
                     <button
                       type="button"
                       role="tab"

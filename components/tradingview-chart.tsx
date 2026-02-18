@@ -11,6 +11,7 @@ function getTradingViewSymbol(asset: string): string {
   const normalized = asset.replace('-', '');
   if (asset.startsWith('ETH')) return `BINANCE:ETHUSDT`;
   if (asset.startsWith('BTC')) return `BINANCE:BTCUSDT`;
+  if (asset.startsWith('MON')) return `BINANCE:MONUSDT`;
   return `BINANCE:${normalized}USDT`;
 }
 
