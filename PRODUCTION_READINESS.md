@@ -6,14 +6,15 @@ Checklist and notes for shipping Monad Options (Gamma Guide + options trading).
 
 ## Steps to completion
 
-Recommended order: **UI polish → Deploy contracts → Integrate → Run tests**.
+Recommended order: **UI polish → Deploy contracts → Integrate → Run tests**.  
+**Test suite:** `yarn test` (contract: `forge test --offline`; integration: CoinGecko + ElevenLabs; optional API when `BASE_URL` set). See `test/GammaGuide.t.sol` and `scripts/run-tests.mjs`.
 
 | Phase | Tasks | Owner |
 |-------|--------|--------|
 | **1. Minor UI touch** | ~~Fix remaining lints (aria-selected on trade page)~~; final copy/spacing; ensure Guide context, ticker, and trade layout match design. | Dev |
 | **2. Deploy contracts** | Audit: see `AUDIT.md`. Run `yarn deploy:contract` (Foundry). Deployer: `0x1433dF88aa130363B523f3f452C05854C0a02084`. Set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`; fund contract with quote token for payouts. | Dev / ops |
 | **3. Integrate** | ~~Wire app to contract~~ Done: set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`; Trade page uses GammaGuide for positions, buyOption (1 contract), and settle. | Dev |
-| **4. Run tests** | E2E: connect wallet, view chain, buy option, view position, settle (or wait for expiry); smoke test Guide (voice → Convex → playback); verify price/spot from CoinGecko. | Dev / QA |
+| **4. Run tests** | **Automated:** `yarn test` runs Forge contract tests (16) + integration (CoinGecko, ElevenLabs). Set `BASE_URL=http://localhost:3000` to include `/api/price/monad` when the app is running. **E2E:** connect wallet, view chain, buy option, view position, settle; smoke test Guide (voice → Convex → playback). | Dev / QA |
 
 ---
 
