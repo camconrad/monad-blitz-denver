@@ -53,12 +53,23 @@ Recommended order: **UI polish → Deploy contracts → Integrate → Run tests*
 | NEXT_PUBLIC_CONVEX_SITE_URL | Vercel (Convex sets on dev) | Yes for voice POST |
 | GEMINI_API_KEY | Convex dashboard | Yes for voice |
 | ELEVEN_LABS_API_KEY | Convex dashboard | Yes for TTS |
-| COINGECKO_API_KEY | Vercel, .env.local | Optional (higher rate limit) |
+| COINGECKO_API_KEY | Vercel, .env.local | Optional (higher rate limit). **Vercel:** add in Project → Settings → Environment Variables; name must be exactly `COINGECKO_API_KEY`; select **Production** (and Preview if needed); **redeploy** after adding—env vars apply only to new deployments. |
 | NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID | Vercel, .env.local | Yes for wallet connect |
 | NEXT_PUBLIC_MONAD_TESTNET_RPC_URL | Optional override | Default: testnet RPC |
 | NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS | Vercel, .env.local | After deploy; Trade page contract |
 | DEPLOYER_PRIVATE_KEY | .env.local only (never commit) | Forge deploy script |
 | MONAD_RPC_URL | .env.local for deploy | Default: https://testnet-rpc.monad.xyz |
+
+---
+
+## CoinGecko in production (“CoinGecko unavailable”)
+
+If the Guide shows “CoinGecko unavailable” in production but works locally:
+
+1. **Redeploy** — Vercel applies env vars only to **new** deployments. After adding or changing `COINGECKO_API_KEY`, trigger a new production deploy (push to main or “Redeploy” in Vercel).
+2. **Environment** — In Vercel → Project → Settings → Environment Variables, ensure `COINGECKO_API_KEY` is checked for **Production** (and Preview if you use preview URLs).
+3. **Name** — Variable must be exactly `COINGECKO_API_KEY` (all caps, underscore).
+4. **Verify** — After redeploying, open `https://<your-domain>/api/price/monad` and check the response header `X-CoinGecko-Key`: `present` means the key is loaded; `missing` means the env var is not available to the serverless function. If the body is `{ "error": "CoinGecko 429" }`, the key may be invalid or you are rate-limited.
 
 ---
 

@@ -19,6 +19,11 @@ export async function GET() {
     headers["x-cg-demo-api-key"] = key;
   }
 
+  // Debug: confirm key is available in production (does not expose the key)
+  const responseHeaders: Record<string, string> = {
+    "X-CoinGecko-Key": key ? "present" : "missing",
+  };
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5_000);
 
@@ -32,7 +37,7 @@ export async function GET() {
     if (!res.ok) {
       return NextResponse.json(
         { error: `CoinGecko ${res.status}` },
-        { status: 502 }
+        { status: 502, headers: responseHeaders }
       );
     }
     const data = (await res.json()) as Array<{
@@ -48,18 +53,21 @@ export async function GET() {
     if (!coin || typeof coin.current_price !== "number") {
       return NextResponse.json(
         { error: "Monad market data not found" },
-        { status: 404 }
+        { status: 404, headers: responseHeaders }
       );
     }
-    return NextResponse.json({
-      price: coin.current_price,
-      high24h: coin.high_24h ?? null,
-      low24h: coin.low_24h ?? null,
-      volume24h: coin.total_volume ?? null,
-      change24h: coin.price_change_percentage_24h ?? null,
-      marketCap: coin.market_cap ?? null,
-      marketCapRank: coin.market_cap_rank ?? null,
-    });
+    return NextResponse.json(
+      {
+        price: coin.current_price,
+        high24h: coin.high_24h ?? null,
+        low24h: coin.low_24h ?? null,
+        volume24h: coin.total_volume ?? null,
+        change24h: coin.price_change_percentage_24h ?? null,
+        marketCap: coin.market_cap ?? null,
+        marketCapRank: coin.market_cap_rank ?? null,
+      },
+      { headers: responseHeaders }
+    );
   } catch (e) {
     clearTimeout(timeoutId);
     const message =
@@ -68,6 +76,9 @@ export async function GET() {
           ? "Price fetch timeout"
           : e.message
         : "Price fetch failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: message },
+      { status: 500, headers: responseHeaders }
+    );
   }
 }

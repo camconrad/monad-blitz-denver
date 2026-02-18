@@ -10,7 +10,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Monad Options - AI Voice Trading Assistant",
+  title: { default: "Gamma Guide", template: "%s - Gamma Guide" },
   description: "AI-Powered Voice Trading Assistant for European Vanilla Options - Built for Monad Blitz Denver",
 };
 
