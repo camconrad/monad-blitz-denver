@@ -174,4 +174,37 @@
   .no-visible-scrollbar::-webkit-scrollbar {
     display: none;
   }
+  .touch-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Safe area for notched devices (iOS, etc.) */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left, 0);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right, 0);
+  }
+  .safe-x {
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+  }
+  .safe-y {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+/* Touch-friendly: prevent double-tap zoom on buttons/controls */
+@media (pointer: coarse) {
+  button, [role="button"], a, input, select, textarea {
+    touch-action: manipulation;
+  }
 }

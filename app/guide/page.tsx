@@ -86,11 +86,11 @@ function GuideContext() {
       <p className="text-xs text-muted-foreground border-b border-border/60 pb-2">
         Context for guide: {guideSummary}
       </p>
-      <div className="grid grid-cols-5 gap-x-4 gap-y-2 text-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-x-3 gap-y-2 sm:gap-x-4 text-sm">
         {rows.map(({ label, value, sub }) => (
           <div key={label} className="min-w-0">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-            <p className="mt-0.5 font-semibold text-foreground">{value}</p>
+            <p className="mt-0.5 font-semibold text-foreground truncate">{value}</p>
             {sub && <p className="text-xs text-muted-foreground mt-0.5 truncate" title={sub}>{sub}</p>}
           </div>
         ))}
@@ -338,17 +338,26 @@ export default function GuidePage() {
     (needsBackend ? 'Set NEXT_PUBLIC_CONVEX_URL (recommended) or NEXT_PUBLIC_VOICE_WS_URL' : '');
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden">
-      <div className="px-2 pt-2 shrink-0">
+    <div className="h-dvh flex flex-col overflow-hidden safe-top safe-bottom">
+      <div className="px-2 pt-2 shrink-0 safe-x">
         <header className="rounded-lg border border-border card-glass">
-          <div className="grid grid-cols-3 items-center gap-3 px-3 py-2">
-          <div className="min-w-0 flex justify-start">
-            <h1 className="text-lg font-semibold">Gamma Guide</h1>
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 items-stretch sm:items-center px-3 py-2">
+          <div className="min-w-0 flex items-center justify-between sm:justify-start gap-2">
+            <h1 className="text-base sm:text-lg font-semibold truncate">Gamma Guide</h1>
+            <div className="flex sm:hidden items-center gap-2">
+              <div className="flex items-center gap-2 px-2 py-1 rounded-full border border-border bg-background/50">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-monad animate-pulse' : isProcessing ? 'bg-amber-500 animate-pulse' : 'bg-muted'}`} />
+                <span className="text-[10px] sm:text-xs uppercase w-10 sm:w-11 text-center inline-block">
+                  {isActive ? 'Listening' : isProcessing ? 'Processing…' : 'Ready'}
+                </span>
+              </div>
+              <WalletAvatar className="shrink-0" />
+            </div>
           </div>
 
           <CoachTradeTabs />
-          
-          <div className="flex items-center gap-2 min-w-0 justify-end">
+
+          <div className="hidden sm:flex items-center gap-2 min-w-0 justify-end">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-background/50">
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-monad animate-pulse' : isProcessing ? 'bg-amber-500 animate-pulse' : 'bg-muted'}`} />
               <span className="text-xs uppercase w-11 text-center inline-block">
@@ -361,10 +370,10 @@ export default function GuidePage() {
         </header>
       </div>
 
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full flex flex-col lg:flex-row gap-2 p-2">
-          <div className="flex-1 lg:flex-[0.45] flex flex-col gap-2">
-            <div className="flex-1 relative rounded-2xl overflow-hidden flex items-center justify-center min-h-[320px]">
+      <main className="flex-1 overflow-hidden min-w-0">
+        <div className="h-full flex flex-col lg:flex-row gap-2 p-2 safe-x">
+          <div className="flex-1 lg:flex-[0.45] flex flex-col gap-2 min-w-0">
+            <div className="flex-1 relative rounded-2xl overflow-hidden flex items-center justify-center min-h-[260px] sm:min-h-[300px] md:min-h-[320px]">
               <div
                 className={`absolute inset-0 rounded-2xl transition-opacity duration-700 ${
                   isActive ? 'opacity-100' : 'opacity-70'
@@ -416,8 +425,8 @@ export default function GuidePage() {
                 </div>
               </div>
 
-              <div className="relative z-10 text-center px-6 pt-36">
-                <p className="text-lg tracking-tight text-foreground/90 font-bold max-w-xs mx-auto mt-24 mb-8">
+              <div className="relative z-10 text-center px-4 sm:px-6 pt-28 sm:pt-36">
+                <p className="text-base sm:text-lg tracking-tight text-foreground/90 font-bold max-w-xs mx-auto mt-16 sm:mt-24 mb-6 sm:mb-8">
                   {isActive ? 'Listening on Monad' : 'Speak. Get clarity.'}
                 </p>
                 <Button
@@ -426,8 +435,8 @@ export default function GuidePage() {
                   onClick={() => (isActive ? stopCapture() : startCapture())}
                   className={
                     isActive
-                      ? 'rounded-full px-10 py-6 text-sm font-medium border border-destructive/40 text-white hover:bg-destructive/30 hover:border-destructive/60 transition-colors'
-                      : 'rounded-full px-10 py-6 text-sm font-medium'
+                      ? 'rounded-full px-8 sm:px-10 py-5 sm:py-6 text-sm font-medium border border-destructive/40 text-white hover:bg-destructive/30 hover:border-destructive/60 transition-colors min-h-[44px]'
+                      : 'rounded-full px-8 sm:px-10 py-5 sm:py-6 text-sm font-medium min-h-[44px]'
                   }
                 >
                   {isActive ? 'End' : 'Begin'}
@@ -486,7 +495,7 @@ export default function GuidePage() {
         </div>
       </main>
 
-      <div className="px-2 pb-2 shrink-0">
+      <div className="px-2 pb-2 shrink-0 safe-x safe-bottom">
         <footer className="rounded-lg border border-border card-glass px-3 py-2 w-full">
           <div className="w-full flex items-center justify-between">
             <p className="text-xs text-muted-foreground">© Monad Blitz Denver</p>

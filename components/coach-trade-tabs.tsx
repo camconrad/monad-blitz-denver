@@ -22,7 +22,7 @@ export function CoachTradeTabs() {
             key={tab.value}
             href={tab.href}
             className={cn(
-              'relative z-0 px-4 py-2 text-sm font-medium rounded-md transition-colors',
+              'relative z-0 flex items-center justify-center min-h-[44px] px-4 py-2 text-sm font-medium rounded-md transition-colors',
               activeValue === tab.value
                 ? 'text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'

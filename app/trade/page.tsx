@@ -316,24 +316,30 @@ export default function TradePage() {
   }, [selectionKey, orderSide]);
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden">
+    <div className="h-dvh flex flex-col overflow-hidden safe-top safe-bottom">
       {/* Header - wrapped card to match page content pattern */}
-      <div className="px-2 pt-2 shrink-0">
+      <div className="px-2 pt-2 shrink-0 safe-x">
         <header className="rounded-lg border border-border card-glass">
-          <div className="grid grid-cols-3 items-center gap-3 px-3 py-2">
-          <div className="min-w-0 flex justify-start">
-            <h1 className="text-lg font-semibold">Options Trading</h1>
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 items-stretch sm:items-center px-3 py-2">
+          <div className="min-w-0 flex items-center justify-between sm:justify-start gap-2">
+            <h1 className="text-base sm:text-lg font-semibold truncate">Options Trading</h1>
+            <div className="flex sm:hidden items-center gap-2">
+              <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary text-[10px] px-1.5 py-0">
+                Testnet
+              </Badge>
+              <WalletAvatar className="shrink-0" />
+            </div>
           </div>
 
           <CoachTradeTabs />
-          
-          <div className="flex items-center gap-4 min-w-0 justify-end">
-            <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary">
+
+          <div className="hidden sm:flex items-center gap-4 min-w-0 justify-end">
+            <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary shrink-0">
               Testnet
             </Badge>
-            <div className="text-right">
+            <div className="text-right min-w-0">
               <p className="text-xs text-muted-foreground">Portfolio Value</p>
-              <p className="text-sm font-semibold">
+            <p className="text-sm font-semibold truncate">
                 {!address
                   ? '$0.00'
                   : portfolioValueUsd != null
@@ -347,8 +353,8 @@ export default function TradePage() {
         </header>
       </div>
 
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full flex flex-col gap-2 p-2">
+      <main className="flex-1 overflow-hidden min-w-0">
+        <div className="h-full flex flex-col gap-2 p-2 safe-x">
           {(coachRisk || liveTranscript || coachSuggestions.length > 0) && (
             <div className="shrink-0 rounded-lg border border-border card-glass p-3 space-y-2">
               <h3 className="text-sm font-semibold">Coach</h3>
@@ -390,50 +396,50 @@ export default function TradePage() {
             </div>
           )}
           <div className="flex-1 flex flex-col lg:flex-row gap-2 min-h-0">
-          <div className="flex-1 lg:flex-[0.6] flex flex-col gap-2">
+          <div className="flex-1 lg:flex-[0.6] flex flex-col gap-2 min-w-0">
             {/* Asset Selector & Price */}
             <div className="border border-border rounded-lg card-glass p-3">
-              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <div className="flex flex-col gap-3 sm:flex-wrap sm:flex-row sm:items-center sm:justify-between gap-x-6 gap-y-3">
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                     <Image src="/logo.png" alt="MON" width={40} height={40} className="w-full h-full object-cover rounded-full" />
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold">{selectedAsset}</h2>
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-xl font-bold truncate">{selectedAsset}</h2>
                     <p className="text-xs text-muted-foreground">Monad / US Dollar</p>
                   </div>
                 </div>
 
-                <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 sm:gap-4 text-sm min-w-0">
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h High</p>
-                    <p className="font-semibold">{!hasRealMonadData && monadLoading ? '…' : `$${high24h.toFixed(2)}`}</p>
+                    <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : `$${high24h.toFixed(2)}`}</p>
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h Low</p>
-                    <p className="font-semibold">{!hasRealMonadData && monadLoading ? '…' : `$${low24h.toFixed(2)}`}</p>
+                    <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : `$${low24h.toFixed(2)}`}</p>
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Volume</p>
-                    <p className="font-semibold">{!hasRealMonadData && monadLoading ? '…' : (vol24hFormatted ?? '—')}</p>
+                    <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : (vol24hFormatted ?? '—')}</p>
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">IV Rank</p>
                     <p className="font-semibold">68%</p>
                   </div>
                 </div>
-                
-                <div className="text-right shrink-0">
-                  <p className="text-2xl font-bold">{!hasRealMonadData && monadLoading ? '…' : `$${displaySpot.toFixed(2)}`}</p>
+
+                <div className="text-left sm:text-right shrink-0 flex items-center justify-between sm:block">
+                  <p className="text-xl sm:text-2xl font-bold">{!hasRealMonadData && monadLoading ? '…' : `$${displaySpot.toFixed(2)}`}</p>
                   <div className={cn(
-                    'flex items-center justify-end gap-1 text-sm',
+                    'flex items-center gap-1 text-sm',
                     change24h >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   )}>
                     {!hasRealMonadData && monadLoading ? (
                       <span>…</span>
                     ) : (
                       <>
-                        {change24h >= 0 ? <ChevronUp className="w-5 h-5 shrink-0" fill="currentColor" /> : <ChevronDown className="w-5 h-5 shrink-0" fill="currentColor" />}
+                        {change24h >= 0 ? <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="currentColor" /> : <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="currentColor" />}
                         <span>{change24h >= 0 ? '+' : ''}{change24h.toFixed(1)}% (24h)</span>
                       </>
                     )}
@@ -443,8 +449,8 @@ export default function TradePage() {
             </div>
 
             {/* TradingView Chart */}
-            <div className="flex-1 min-h-[400px] border border-border rounded-lg card-glass overflow-hidden">
-              <TradingViewChart symbol={selectedAsset} className="h-full min-h-[400px]" />
+            <div className="flex-1 min-h-[280px] sm:min-h-[340px] md:min-h-[400px] border border-border rounded-lg card-glass overflow-hidden">
+              <TradingViewChart symbol={selectedAsset} className="h-full min-h-[280px] sm:min-h-[340px] md:min-h-[400px]" />
             </div>
 
             {/* Open / Closed Positions (exchange-style) */}
@@ -480,7 +486,7 @@ export default function TradePage() {
                   Closed Positions
                 </button>
               </div>
-              <div className="flex-1 overflow-auto p-1.5">
+              <div className="flex-1 overflow-auto p-1.5 touch-scroll-x">
                 {positionsTab === 'open' && (
                   <>
                     {positionsLoading ? (
@@ -490,7 +496,7 @@ export default function TradePage() {
                         {contractAddress ? 'No open positions on chain' : 'No positions yet'}
                       </p>
                     ) : (
-                      <div className="min-w-[640px]">
+                      <div className="min-w-[640px] w-max">
                         <div className="text-[10px] text-muted-foreground grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_0.8fr_1fr_auto] gap-2 pb-2 border-b border-border mb-2">
                           <span>Instrument</span>
                           <span>Side</span>
@@ -564,7 +570,7 @@ export default function TradePage() {
                         {contractAddress ? 'No closed positions on chain' : 'No closed positions yet'}
                       </p>
                     ) : (
-                      <div className="min-w-[640px]">
+                      <div className="min-w-[640px] w-max">
                         <div className="text-[10px] font-mono text-muted-foreground grid grid-cols-[1fr_1fr_0.6fr_0.8fr_0.8fr_1fr_1.2fr_auto] gap-2 pb-2 border-b border-border mb-2">
                           <span>Instrument</span>
                           <span>Side</span>
@@ -671,9 +677,9 @@ export default function TradePage() {
                 <span>Vol: {vol24hFormatted ?? '—'}</span>
               </div>
 
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto touch-scroll-x">
                 {chainView === 'all' && (
-                  <div className="min-w-[640px]">
+                  <div className="min-w-[640px] w-max">
                     {/* Pro-style column order: CALLS Vol, Chg, Last, BidSz, AskSz, Bid, Ask, IV, Δ | STRIKE | PUTS Δ, IV, Bid, Ask, AskSz, BidSz, Last, Chg, Vol */}
                     <div className="text-[10px] text-muted-foreground grid grid-cols-[repeat(19,minmax(0,1fr))] gap-x-1 pb-1.5 border-b border-border sticky top-0 bg-card/95 z-10">
                       <span className="text-right truncate min-w-0" title="Vol">Vol</span>
@@ -748,7 +754,7 @@ export default function TradePage() {
                 )}
 
                 {(chainView === 'calls' || chainView === 'puts') && (
-                  <div className="min-w-[520px]">
+                  <div className="min-w-[520px] w-max">
                     <div className="text-[10px] text-muted-foreground grid grid-cols-11 gap-1 pb-1.5 border-b border-border sticky top-0 bg-card/95 z-10">
                       <span className="truncate min-w-0" title="Strike">Strike</span>
                       <span className="text-right truncate min-w-0" title="Bid">Bid</span>
@@ -1064,7 +1070,7 @@ export default function TradePage() {
       </main>
 
       {/* Footer - wrapped card to match page content pattern */}
-      <div className="px-2 pb-2 shrink-0">
+      <div className="px-2 pb-2 shrink-0 safe-x safe-bottom">
         <footer className="rounded-lg border border-border card-glass px-3 py-2 w-full">
           <div className="w-full flex items-center justify-between">
             <p className="text-xs text-muted-foreground">© Monad Blitz Denver</p>
@@ -1075,8 +1081,8 @@ export default function TradePage() {
 
       {/* Close position modal */}
       {closeModalPosition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true" aria-labelledby="close-modal-title">
-          <div className="bg-card border border-border rounded-lg shadow-lg max-w-sm w-full p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 safe-x safe-y" role="dialog" aria-modal="true" aria-labelledby="close-modal-title">
+          <div className="bg-card border border-border rounded-lg shadow-lg max-w-sm w-full p-4 max-h-[85dvh] overflow-y-auto">
             <h2 id="close-modal-title" className="text-sm font-semibold mb-2">Close position</h2>
             <p className="text-xs text-muted-foreground mb-3">
               {closeModalPosition.symbol} {formatExpiryShort(closeModalPosition.expiry)} ${closeModalPosition.strike} {closeModalPosition.side} · Size {closeModalPosition.size}
@@ -1140,8 +1146,8 @@ export default function TradePage() {
         const pos = closedPositionsDisplay.find((p) => p.id === viewClosedId);
         if (!pos) return null;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true" aria-labelledby="view-closed-title">
-            <div className="bg-card border border-border rounded-lg shadow-lg max-w-sm w-full p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 safe-x safe-y" role="dialog" aria-modal="true" aria-labelledby="view-closed-title">
+            <div className="bg-card border border-border rounded-lg shadow-lg max-w-sm w-full p-4 max-h-[85dvh] overflow-y-auto">
               <h2 id="view-closed-title" className="text-sm font-semibold mb-3">Closed position details</h2>
               <dl className="text-xs space-y-2 font-mono">
                 <div className="flex justify-between">

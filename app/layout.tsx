@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "@/components/providers";
@@ -12,6 +12,13 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Monad Options - AI Voice Trading Assistant",
   description: "AI-Powered Voice Trading Assistant for European Vanilla Options - Built for Monad Blitz Denver",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
