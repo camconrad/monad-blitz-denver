@@ -54,7 +54,7 @@ Recommended order: **UI polish → Deploy contracts → Integrate → Run tests*
 | GEMINI_API_KEY | Convex dashboard | Yes for voice |
 | ELEVEN_LABS_API_KEY | Convex dashboard | Yes for TTS |
 | COINGECKO_API_KEY | Vercel, .env.local | Optional (higher rate limit). **Vercel:** add in Project → Settings → Environment Variables; name must be exactly `COINGECKO_API_KEY`; select **Production** (and Preview if needed); **redeploy** after adding—env vars apply only to new deployments. |
-| NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID | Vercel, .env.local | Yes for wallet connect |
+| NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID | Vercel, .env.local | Yes for wallet connect. **403 from pulse.walletconnect.org:** add your production domain (e.g. `https://www.gamma-guide.com`) to the project **Allowlist** at [cloud.reown.com](https://cloud.reown.com). |
 | NEXT_PUBLIC_MONAD_TESTNET_RPC_URL | Optional override | Default: testnet RPC |
 | NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS | Vercel, .env.local | After deploy; Trade page contract |
 | DEPLOYER_PRIVATE_KEY | .env.local only (never commit) | Forge deploy script |

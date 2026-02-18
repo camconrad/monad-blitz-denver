@@ -24,21 +24,37 @@ export async function GET() {
     "X-CoinGecko-Key": key ? "present" : "missing",
   };
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5_000);
+  const timeoutMs = 8_000;
+  async function fetchCoinGecko(retry = false): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url.toString(), {
+        signal: controller.signal,
+        headers,
+        next: { revalidate: 60 },
+      });
+      clearTimeout(timeoutId);
+      const shouldRetry = retry === false && !res.ok && (res.status === 429 || res.status >= 500);
+      if (shouldRetry) {
+        await new Promise((r) => setTimeout(r, 800));
+        return fetchCoinGecko(true);
+      }
+      return res;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
+  }
 
   try {
-    const res = await fetch(url.toString(), {
-      signal: controller.signal,
-      headers,
-      next: { revalidate: 60 },
-    });
-    clearTimeout(timeoutId);
+    const res = await fetchCoinGecko();
     if (!res.ok) {
-      return NextResponse.json(
-        { error: `CoinGecko ${res.status}` },
-        { status: 502, headers: responseHeaders }
-      );
+      const body = { error: `CoinGecko ${res.status}`, upstreamStatus: res.status };
+      return NextResponse.json(body, {
+        status: 502,
+        headers: { ...responseHeaders, "Cache-Control": "no-store, max-age=0" },
+      });
     }
     const data = (await res.json()) as Array<{
       current_price?: number;
@@ -69,7 +85,6 @@ export async function GET() {
       { headers: responseHeaders }
     );
   } catch (e) {
-    clearTimeout(timeoutId);
     const message =
       e instanceof Error
         ? e.name === "AbortError"
@@ -78,7 +93,10 @@ export async function GET() {
         : "Price fetch failed";
     return NextResponse.json(
       { error: message },
-      { status: 500, headers: responseHeaders }
+      {
+        status: 500,
+        headers: { ...responseHeaders, "Cache-Control": "no-store, max-age=0" },
+      }
     );
   }
 }

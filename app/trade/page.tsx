@@ -374,8 +374,8 @@ export default function TradePage() {
         </header>
       </div>
 
-      <main className="flex-1 overflow-hidden min-w-0">
-        <div className="h-full flex flex-col gap-2 p-2 px-2">
+      <main className="flex-1 min-w-0 overflow-auto lg:overflow-hidden">
+        <div className="min-h-full lg:h-full flex flex-col gap-2 p-2 px-2">
           {(coachRisk || liveTranscript || coachSuggestions.length > 0) && (
             <div className="shrink-0 rounded-lg border border-border card-glass p-3 space-y-2">
               <h3 className="text-sm font-semibold">Coach</h3>
@@ -417,7 +417,10 @@ export default function TradePage() {
             </div>
           )}
           <div className="flex-1 flex flex-col lg:flex-row gap-2 min-h-0">
-          <div className="flex-1 lg:flex-[0.6] flex flex-col gap-2 min-w-0">
+          {/* Left column: on mobile uses contents so children reorder (Options Chain, Place Order, then Positions); on lg a single column */}
+          <div className="contents lg:flex lg:flex-col lg:gap-2 lg:min-w-0 lg:flex-[0.6]">
+            {/* 1. Asset + Chart — mobile order 1, lg normal */}
+            <div className="order-1 lg:order-none flex flex-col gap-2 min-w-0 shrink-0">
             {/* Asset Selector & Price - full width, equal space between all items */}
             <div className="border border-border rounded-lg card-glass p-3 w-full">
               <div className="grid grid-cols-2 sm:flex sm:flex-nowrap sm:justify-between sm:items-center gap-x-4 sm:gap-x-0 gap-y-3 w-full">
@@ -482,9 +485,10 @@ export default function TradePage() {
             <div className="flex-1 min-h-[280px] sm:min-h-[340px] md:min-h-[400px] border border-border rounded-lg card-glass overflow-hidden">
               <TradingViewChart symbol={selectedAsset} className="h-full min-h-[280px] sm:min-h-[340px] md:min-h-[400px]" />
             </div>
+            </div>
 
-            {/* Open / Closed Positions (exchange-style) */}
-            <div className="shrink-0 border border-border rounded-lg card-glass overflow-hidden flex flex-col min-h-[200px] max-h-[280px]">
+            {/* 3. Open / Closed Positions — mobile order 3 (after Options Chain, Place Order), lg normal */}
+            <div className="order-3 lg:order-none shrink-0 border border-border rounded-lg card-glass overflow-hidden flex flex-col min-h-[200px] max-h-[280px]">
               <div className="flex items-center border-b border-border bg-muted/20">
                 <button
                   type="button"
@@ -644,8 +648,8 @@ export default function TradePage() {
             </div>
           </div>
 
-          {/* Right Column - Options Chain & Order Entry */}
-          <div className="flex-1 lg:flex-[0.4] flex flex-col gap-2 min-w-0">
+          {/* Right Column - Options Chain & Order Entry — mobile order 2 (after chart, before positions) */}
+          <div className="order-2 lg:order-none flex-1 lg:flex-[0.4] flex flex-col gap-2 min-w-0 min-h-0">
             {/* Options Chain */}
             <div className="flex-1 min-h-0 border border-border rounded-lg card-glass p-3 flex flex-col overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
