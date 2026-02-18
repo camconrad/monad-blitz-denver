@@ -15,7 +15,7 @@ export async function GET() {
   url.searchParams.set("page", "1");
 
   const headers: Record<string, string> = {};
-  if (key && key.length > 10 && !key.startsWith("x_cg_")) {
+  if (key && key.length > 0) {
     headers["x-cg-demo-api-key"] = key;
   }
 
