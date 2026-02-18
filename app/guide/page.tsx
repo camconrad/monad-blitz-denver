@@ -40,7 +40,7 @@ function GuideContext() {
     {
       label: 'Spot',
       value: spotFormatted,
-      sub: monadError && !monadMarket ? 'CoinGecko unavailable' : 'Live (CoinGecko)',
+      sub: monadError && !monadMarket ? 'CoinGecko unavailable' : monadMarket?.fallback ? 'Approximate' : 'Live (CoinGecko)',
     },
     {
       label: 'Strategy',

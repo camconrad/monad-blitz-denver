@@ -89,6 +89,46 @@ E2E (manual): connect wallet, view chain, place order, view/settle position; Gui
 
 ---
 
+## Web APIs: communication between tabs
+
+The app uses the **BroadcastChannel API** so the **Guide** tab (voice/coach) and the **Trade** tab stay in sync without sharing a React tree.
+
+### How it works
+
+- **Channel:** One same-origin channel, name `gamma_guide_bus` (see `lib/voice-coach-bus.ts`). Any tab that opens a `BroadcastChannel` with this name can send and receive messages; only other same-origin tabs (and iframes) receive a given post (the posting tab does not receive its own message).
+- **Bus abstraction:** `createCoachBus()` returns a small bus: `publish(type, payload, requestId?)` and `subscribe(handler)`. Under the hood it uses `new BroadcastChannel(BUS_NAME)`, and on `publish` calls `channel.postMessage(envelope)`. Incoming messages are delivered to the channel’s `onmessage`; the bus forwards them to every registered `handler`.
+- **Message shape:** Every message is an envelope `{ type: string, ts: number, requestId?: string, payload: unknown }`. `type` identifies the event; `payload` carries the data.
+
+### Who publishes, who subscribes
+
+| Tab   | Role | What it does |
+|-------|------|----------------|
+| **Guide** | Publisher | After voice/Convex returns transcript or coach output, it calls `bus.publish(...)` so other tabs can show it. |
+| **Trade** | Subscriber | Creates a bus, calls `bus.subscribe(handler)`, and in the handler updates Coach panel state (suggestions, risk alerts, live transcript). |
+
+So: Guide speaks and gets coach responses; it publishes those events on the bus. Trade (and any other tab using the same channel) receives them and can show the same suggestions and transcript.
+
+### Event types
+
+| `type` | When it’s published | `payload` (typical) |
+|--------|----------------------|----------------------|
+| `coach.transcript.partial` | Interim transcript from voice pipeline | `{ text: string }` |
+| `coach.transcript.final` | Final transcript for an utterance | `{ text: string }` |
+| `coach.suggestion` | Coach suggestion (e.g. strategy idea) | `{ title?, rationale?, actions? }` |
+| `coach.risk.alert` | Risk warning or block from coach | `{ severity?, message? }` (e.g. `warn` / `block`) |
+
+Trade’s handler maps these to `liveTranscript`, `coachSuggestions`, and `coachRisk`, which drive the Coach panel on the Trade page.
+
+### Why BroadcastChannel
+
+- **Same-origin only:** No cross-site leakage; only tabs/windows for this app’s origin see the messages.
+- **No server round-trip:** Tab-to-tab only; no backend needed for sync.
+- **Simple API:** `postMessage` + `onmessage`; the bus adds a typed envelope and local subscribe/publish.
+
+Other options (e.g. `localStorage` + `storage` event, `SharedWorker`, or a central server) would add complexity or latency; BroadcastChannel fits this “one coach, many tabs” use case. See also [PAGES_GUIDE.md](./PAGES_GUIDE.md) and [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) for flow and architecture.
+
+---
+
 ## Stack
 
 Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui, Motion, Convex, Wagmi/RainbowKit, Viem. Contract: Solidity (Foundry).

@@ -47,14 +47,26 @@ export async function GET() {
     }
   }
 
+  const FALLBACK_PRICE = 0.02162;
+  const FALLBACK_CHANGE_24H = 7.9;
+  const fallbackPayload = {
+    price: FALLBACK_PRICE,
+    high24h: null as number | null,
+    low24h: null as number | null,
+    volume24h: null as number | null,
+    change24h: FALLBACK_CHANGE_24H,
+    marketCap: null as number | null,
+    marketCapRank: null as number | null,
+    fallback: true as const,
+  };
+
   try {
     const res = await fetchCoinGecko();
     if (!res.ok) {
-      const body = { error: `CoinGecko ${res.status}`, upstreamStatus: res.status };
-      return NextResponse.json(body, {
-        status: 502,
-        headers: { ...responseHeaders, "Cache-Control": "no-store, max-age=0" },
-      });
+      return NextResponse.json(
+        { ...fallbackPayload },
+        { status: 200, headers: { ...responseHeaders, "Cache-Control": "no-store, max-age=0" } }
+      );
     }
     const data = (await res.json()) as Array<{
       current_price?: number;
@@ -68,8 +80,8 @@ export async function GET() {
     const coin = Array.isArray(data) ? data[0] : null;
     if (!coin || typeof coin.current_price !== "number") {
       return NextResponse.json(
-        { error: "Monad market data not found" },
-        { status: 404, headers: responseHeaders }
+        { ...fallbackPayload },
+        { status: 200, headers: responseHeaders }
       );
     }
     return NextResponse.json(
@@ -85,16 +97,10 @@ export async function GET() {
       { headers: responseHeaders }
     );
   } catch (e) {
-    const message =
-      e instanceof Error
-        ? e.name === "AbortError"
-          ? "Price fetch timeout"
-          : e.message
-        : "Price fetch failed";
     return NextResponse.json(
-      { error: message },
+      { ...fallbackPayload },
       {
-        status: 500,
+        status: 200,
         headers: { ...responseHeaders, "Cache-Control": "no-store, max-age=0" },
       }
     );

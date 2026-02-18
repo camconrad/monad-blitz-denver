@@ -95,6 +95,8 @@ export type MonadMarketResponse = {
   change24h: number | null;
   marketCap: number | null;
   marketCapRank: number | null;
+  /** True when CoinGecko failed and API returned fallback price. */
+  fallback?: boolean;
 };
 
 const MONAD_MARKET_CACHE_KEY = "monad_market";

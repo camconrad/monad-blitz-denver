@@ -21,7 +21,7 @@ export default function Home() {
           <div className="mt-4 sm:mt-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2 [text-wrap:balance]">Gamma Guide</h2>
             <p className="text-sm text-muted-foreground [text-wrap:balance] line-clamp-2">
-              Smart guide for options. Ask in plain English, receive proactive consultation and execution ideas.
+              Voice coach. Ask in English, get ideas.
             </p>
           </div>
         </button>
@@ -37,7 +37,7 @@ export default function Home() {
           <div className="mt-4 sm:mt-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2 [text-wrap:balance]">Options Trading</h2>
             <p className="text-sm text-muted-foreground [text-wrap:balance] line-clamp-2">
-              European vanilla calls and puts. Live data, Greeks, and execution in one place.
+              Calls and puts. Live chain, Greeks, orders.
             </p>
           </div>
         </button>
