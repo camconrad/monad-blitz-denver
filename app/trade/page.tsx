@@ -487,9 +487,9 @@ export default function TradePage() {
             </div>
             </div>
 
-            {/* 3. Open / Closed Positions — mobile order 3 (after Options Chain, Place Order), lg normal */}
-            <div className="order-3 lg:order-none shrink-0 border border-border rounded-lg card-glass overflow-hidden flex flex-col min-h-[200px] max-h-[280px]">
-              <div className="flex items-center border-b border-border bg-muted/20">
+            {/* 3. Open / Closed Positions — mobile order 3 (after Options Chain, Place Order), lg full height */}
+            <div className="order-3 lg:order-none flex-1 min-h-[200px] border border-border rounded-lg card-glass overflow-hidden flex flex-col">
+              <div className="flex shrink-0 items-center border-b border-border bg-muted/20">
                 <button
                   type="button"
                   onClick={() => setPositionsTab('open')}
@@ -520,7 +520,7 @@ export default function TradePage() {
                   Closed Positions
                 </button>
               </div>
-              <div className="flex-1 overflow-auto p-1.5 touch-scroll-x">
+              <div className="flex-1 min-h-0 overflow-auto p-1.5 touch-scroll-x">
                 {positionsTab === 'open' && (
                   <>
                     {positionsLoading ? (
@@ -650,8 +650,8 @@ export default function TradePage() {
 
           {/* Right Column - Options Chain & Order Entry — mobile order 2 (after chart, before positions) */}
           <div className="order-2 lg:order-none flex-1 lg:flex-[0.4] flex flex-col gap-2 min-w-0 min-h-0">
-            {/* Options Chain */}
-            <div className="flex-1 min-h-0 border border-border rounded-lg card-glass p-3 flex flex-col overflow-hidden">
+            {/* Options Chain — min-h so height never shrinks when a row is selected */}
+            <div className="flex-1 min-h-[320px] sm:min-h-[380px] border border-border rounded-lg card-glass p-3 flex flex-col overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                 <h3 className="text-sm font-semibold">Options Chain</h3>
                 <div className="flex items-center gap-2">
