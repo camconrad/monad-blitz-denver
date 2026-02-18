@@ -8,8 +8,8 @@
 
 | Area | Status | Notes |
 |------|--------|--------|
-| **Pages** | ✅ | Home (`/`), Coach (`/coach`), Guide (`/guide`), Trade (`/trade`). Tabs: Guide ↔ Trade. Layout: consistent 8px gap (pt-2 / px-2 / pb-2); side padding not overridden (safe-area on `<body>` only). |
-| **Voice (Gamma Guide)** | ✅ | Convex backend: session → Gemini → ElevenLabs TTS. Optional WebSocket (`NEXT_PUBLIC_VOICE_WS_URL`). Guide page: record → POST `/api/voice` → real-time transcript + coach response. BroadcastChannel bus for cross-tab (Coach ↔ Trade). |
+| **Pages** | ✅ | Home (`/`), Guide (`/guide`), Trade (`/trade`). Tabs: Guide ↔ Trade. Layout: consistent 8px gap (pt-2 / px-2 / pb-2); side padding not overridden (safe-area on `<body>` only). |
+| **Voice (Gamma Guide)** | ✅ | Convex backend: session → Gemini → ElevenLabs TTS. Optional WebSocket (`NEXT_PUBLIC_VOICE_WS_URL`). Guide page: record → POST `/api/voice` → real-time transcript + coach response. BroadcastChannel bus for cross-tab (Guide ↔ Trade). |
 | **Options trading (Trade page)** | ✅ | MON-USD chain; live spot from CoinGecko (`/api/price/monad`). Options chain (calls/puts), order panel (buy/sell, limit/market), TradingView chart. |
 | **Contract (GammaGuide)** | ✅ | Deployed on Monad Testnet. Trade page wired: positions from chain, `buyOption`, `settle`. Set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS` after deploy. |
 | **Price APIs** | ✅ | `/api/price` (multi-coin); `/api/price/monad` (MON markets). Timeouts + 502/500. Optional `COINGECKO_API_KEY` for higher rate limits. Guide Spot row shows “Live (CoinGecko)” from MON market data only. |
@@ -83,7 +83,7 @@ E2E (manual): connect wallet, view chain, place order, view/settle position; Gui
 | [QUICKSTART.md](./QUICKSTART.md) | Short setup |
 | [DEPLOY.md](./DEPLOY.md) | Contract deploy + verify + app wiring |
 | [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) | Checklist, env, security, deployment |
-| [PAGES_GUIDE.md](./PAGES_GUIDE.md) | Coach/Trade implementation, Web APIs (BroadcastChannel, getUserMedia, WebSocket, Fetch, TTS) |
+| [PAGES_GUIDE.md](./PAGES_GUIDE.md) | Guide/Trade implementation, Web APIs (BroadcastChannel, getUserMedia, WebSocket, Fetch, TTS) |
 | [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) | Architecture and data flow |
 | [.env.example](./.env.example) | Env template |
 
