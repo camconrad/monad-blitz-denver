@@ -15,14 +15,14 @@ export function CoachTradeTabs() {
   const activeValue = pathname === '/trade' ? 'trade' : 'guide';
 
   return (
-    <nav className="flex justify-center" aria-label="Page tabs">
-      <div className="flex items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5 no-visible-scrollbar max-w-full">
+    <nav className="flex w-full justify-center" aria-label="Page tabs">
+      <div className="flex w-full md:w-auto items-center gap-0 rounded-lg border border-border bg-muted/30 p-0.5 no-visible-scrollbar max-w-full">
         {tabs.map((tab) => (
           <Link
             key={tab.value}
             href={tab.href}
             className={cn(
-              'relative z-0 flex items-center justify-center min-h-[44px] px-4 py-2 text-sm font-semibold rounded-md transition-colors',
+              'relative z-0 flex flex-1 md:flex-initial items-center justify-center min-h-[44px] px-4 py-2 text-sm font-semibold rounded-md transition-colors',
               activeValue === tab.value
                 ? 'text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
