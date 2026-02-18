@@ -3,6 +3,15 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(process.cwd()),
+  webpack: (config, { isServer }) => {
+    // Optional deps from WalletConnect/MetaMask that break in browser bundle
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      "pino-pretty": false,
+      "@react-native-async-storage/async-storage": false,
+    };
+    return config;
+  },
   async headers() {
     return [
       {

@@ -41,6 +41,8 @@ export async function GET() {
       low_24h?: number;
       total_volume?: number;
       price_change_percentage_24h?: number;
+      market_cap?: number | null;
+      market_cap_rank?: number | null;
     }>;
     const coin = Array.isArray(data) ? data[0] : null;
     if (!coin || typeof coin.current_price !== "number") {
@@ -55,6 +57,8 @@ export async function GET() {
       low24h: coin.low_24h ?? null,
       volume24h: coin.total_volume ?? null,
       change24h: coin.price_change_percentage_24h ?? null,
+      marketCap: coin.market_cap ?? null,
+      marketCapRank: coin.market_cap_rank ?? null,
     });
   } catch (e) {
     clearTimeout(timeoutId);

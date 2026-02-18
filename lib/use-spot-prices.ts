@@ -93,6 +93,8 @@ export type MonadMarketResponse = {
   low24h: number | null;
   volume24h: number | null;
   change24h: number | null;
+  marketCap: number | null;
+  marketCapRank: number | null;
 };
 
 const MONAD_MARKET_CACHE_KEY = "monad_market";

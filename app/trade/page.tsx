@@ -6,13 +6,14 @@ import { motion } from 'motion/react';
 import { ChevronUp, ChevronDown, X, Eye } from 'lucide-react';
 import { useAccount, useBalance, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
+import { PageContainer } from '@/components/page-container';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { WalletAvatar } from '@/components/wallet-avatar';
 import { TradingViewChart } from '@/components/tradingview-chart';
 import {
-  getMockOptionsChain,
+  getOptionsChainWithSpot,
   formatExpiryLabel,
   formatExpiryShort,
   type ChainView,
@@ -66,8 +67,19 @@ function formatClosedAt(): string {
 
 export default function TradePage() {
   const [selectedAsset] = useState('MON-USD');
-  const chainSnapshot = useMemo(() => getMockOptionsChain(), []);
-  const [selectedExpiry, setSelectedExpiry] = useState<string>(chainSnapshot.expirations[0]);
+  const { data: monadMarket, loading: monadLoading } = useMonadMarket();
+  const spot = monadMarket?.price ?? 1.15;
+  const chainSnapshot = useMemo(
+    () => getOptionsChainWithSpot(spot, { change24h: monadMarket?.change24h ?? undefined }),
+    [spot, monadMarket?.change24h]
+  );
+  const [selectedExpiry, setSelectedExpiry] = useState<string>(() =>
+    getOptionsChainWithSpot(1.15).expirations[0]
+  );
+  const effectiveExpiry =
+    selectedExpiry && chainSnapshot.expirations.includes(selectedExpiry)
+      ? selectedExpiry
+      : chainSnapshot.expirations[0];
   const [chainView, setChainView] = useState<ChainView>('all');
   const [selectedOption, setSelectedOption] = useState<{
     expiry: string;
@@ -162,11 +174,8 @@ export default function TradePage() {
     busRef.current.publish('trading.context', tradingContextPayload);
   }, [tradingContextPayload]);
 
-  const { data: monadMarket, loading: monadLoading } = useMonadMarket();
   const hasRealMonadData = monadMarket != null;
-  const chain = chainSnapshot.chainsByExpiry[selectedExpiry] ?? [];
-  const spot = chainSnapshot.spot;
-  // Real MON-USD from CoinGecko (5s timeout); show loading until we have it
+  const chain = chainSnapshot.chainsByExpiry[effectiveExpiry] ?? [];
   const displaySpot = monadMarket?.price ?? chainSnapshot.spot;
   const high24h = monadMarket?.high24h ?? displaySpot * 1.04;
   const low24h = monadMarket?.low24h ?? displaySpot * 0.96;
@@ -181,6 +190,19 @@ export default function TradePage() {
           ? `$${(vol24h / 1e3).toFixed(1)}K`
           : `$${vol24h.toFixed(0)}`
     : null;
+  const marketCap = monadMarket?.marketCap;
+  const marketCapFormatted = marketCap != null
+    ? marketCap >= 1e12
+      ? `$${(marketCap / 1e12).toFixed(2)}T`
+      : marketCap >= 1e9
+        ? `$${(marketCap / 1e9).toFixed(2)}B`
+        : marketCap >= 1e6
+          ? `$${(marketCap / 1e6).toFixed(2)}M`
+          : marketCap >= 1e3
+            ? `$${(marketCap / 1e3).toFixed(2)}K`
+            : `$${marketCap.toFixed(0)}`
+    : null;
+  const marketCapRank = monadMarket?.marketCapRank;
 
   const portfolioValueUsd = useMemo(() => {
     if (!address || !nativeBalance?.value) return null;
@@ -316,9 +338,8 @@ export default function TradePage() {
   }, [selectionKey, orderSide]);
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden safe-top safe-bottom">
-      {/* Header - wrapped card to match page content pattern */}
-      <div className="px-2 pt-2 shrink-0 safe-x">
+    <PageContainer className="h-dvh flex flex-col overflow-hidden">
+      <div className="pt-2 px-2 shrink-0">
         <header className="rounded-lg border border-border card-glass">
           <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 items-stretch sm:items-center px-3 py-2">
           <div className="min-w-0 flex items-center justify-between sm:justify-start gap-2">
@@ -354,7 +375,7 @@ export default function TradePage() {
       </div>
 
       <main className="flex-1 overflow-hidden min-w-0">
-        <div className="h-full flex flex-col gap-2 p-2 safe-x">
+        <div className="h-full flex flex-col gap-2 p-2 px-2">
           {(coachRisk || liveTranscript || coachSuggestions.length > 0) && (
             <div className="shrink-0 rounded-lg border border-border card-glass p-3 space-y-2">
               <h3 className="text-sm font-semibold">Coach</h3>
@@ -397,50 +418,59 @@ export default function TradePage() {
           )}
           <div className="flex-1 flex flex-col lg:flex-row gap-2 min-h-0">
           <div className="flex-1 lg:flex-[0.6] flex flex-col gap-2 min-w-0">
-            {/* Asset Selector & Price */}
-            <div className="border border-border rounded-lg card-glass p-3">
-              <div className="flex flex-col gap-3 sm:flex-wrap sm:flex-row sm:items-center sm:justify-between gap-x-6 gap-y-3">
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0">
-                    <Image src="/logo.png" alt="MON" width={40} height={40} className="w-full h-full object-cover rounded-full" />
+            {/* Asset Selector & Price - full width, equal space between all items */}
+            <div className="border border-border rounded-lg card-glass p-3 w-full">
+              <div className="grid grid-cols-2 sm:flex sm:flex-nowrap sm:justify-between sm:items-center gap-x-4 sm:gap-x-0 gap-y-3 w-full">
+                {/* 1. Token with icon and text below */}
+                <div className="col-span-2 flex flex-col items-start gap-1 min-w-0 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                      <Image src="/logo.png" alt="MON" width={40} height={40} className="w-full h-full object-cover rounded-full" />
+                    </div>
+                    <h2 className="text-lg font-bold truncate">{selectedAsset}</h2>
                   </div>
-                  <div className="min-w-0">
-                    <h2 className="text-lg sm:text-xl font-bold truncate">{selectedAsset}</h2>
-                    <p className="text-xs text-muted-foreground">Monad / US Dollar</p>
-                  </div>
+                  <p className="text-xs text-muted-foreground">Monad / US Dollar</p>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 sm:gap-4 text-sm min-w-0">
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h High</p>
-                    <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : `$${high24h.toFixed(2)}`}</p>
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h Low</p>
-                    <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : `$${low24h.toFixed(2)}`}</p>
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Volume</p>
-                    <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : (vol24hFormatted ?? '—')}</p>
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">IV Rank</p>
-                    <p className="font-semibold">68%</p>
-                  </div>
+                {/* 2. Stats - equal space between each (6 from CoinGecko + IV Rank) */}
+                <div className="min-w-0 text-left shrink-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h High</p>
+                  <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : `$${high24h.toFixed(2)}`}</p>
+                </div>
+                <div className="min-w-0 text-left shrink-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">24h Low</p>
+                  <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : `$${low24h.toFixed(2)}`}</p>
+                </div>
+                <div className="min-w-0 text-left shrink-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Market Cap</p>
+                  <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : (marketCapFormatted ?? '—')}</p>
+                </div>
+                <div className="min-w-0 text-left shrink-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Volume</p>
+                  <p className="font-semibold truncate">{!hasRealMonadData && monadLoading ? '…' : (vol24hFormatted ?? '—')}</p>
+                </div>
+                <div className="min-w-0 text-left shrink-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Rank</p>
+                  <p className="font-semibold truncate">{marketCapRank != null ? `#${marketCapRank}` : '—'}</p>
+                </div>
+                <div className="min-w-0 text-left shrink-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">IV Rank</p>
+                  <p className="font-semibold">68%</p>
                 </div>
 
-                <div className="text-left sm:text-right shrink-0 flex items-center justify-between sm:block">
-                  <p className="text-xl sm:text-2xl font-bold">{!hasRealMonadData && monadLoading ? '…' : `$${displaySpot.toFixed(2)}`}</p>
+                {/* 3. Price with percent change */}
+                <div className="col-span-2 flex flex-col items-end text-right min-w-0 shrink-0">
+                  <p className="text-xl font-bold">{!hasRealMonadData && monadLoading ? '…' : `$${displaySpot.toFixed(2)}`}</p>
                   <div className={cn(
-                    'flex items-center gap-1 text-sm',
+                    'flex items-center justify-end gap-1 text-sm',
                     change24h >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   )}>
                     {!hasRealMonadData && monadLoading ? (
                       <span>…</span>
                     ) : (
                       <>
-                        {change24h >= 0 ? <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="currentColor" /> : <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="currentColor" />}
-                        <span>{change24h >= 0 ? '+' : ''}{change24h.toFixed(1)}% (24h)</span>
+                        {change24h >= 0 ? <ChevronUp className="w-4 h-4 shrink-0" fill="currentColor" /> : <ChevronDown className="w-4 h-4 shrink-0" fill="currentColor" />}
+                        <span className="font-semibold">{Math.abs(change24h).toFixed(1)}% (24h)</span>
                       </>
                     )}
                   </div>
@@ -623,7 +653,7 @@ export default function TradePage() {
                 <div className="flex items-center gap-2">
                   <select
                     aria-label="Options expiration date"
-                    value={selectedExpiry}
+                    value={effectiveExpiry}
                     onChange={(e) => {
                       setSelectedExpiry(e.target.value);
                       setSelectedOption(null);
@@ -705,7 +735,7 @@ export default function TradePage() {
                     {(() => {
                       const atmStrike = chain.length
                         ? chain.reduce((best, r) =>
-                            Math.abs(r.strike - spot) < Math.abs(best - spot) ? r.strike : best,
+                            Math.abs(r.strike - displaySpot) < Math.abs(best - displaySpot) ? r.strike : best,
                           chain[0].strike)
                         : null;
                       return chain.map((row) => {
@@ -715,7 +745,7 @@ export default function TradePage() {
                           selectedOption?.side === 'put' && selectedOption?.strike === row.strike;
                         const isAtm = atmStrike !== null && row.strike === atmStrike;
                         const rowClick = (side: OptionSide) =>
-                          setSelectedOption({ expiry: selectedExpiry, strike: row.strike, side, row });
+                          setSelectedOption({ expiry: effectiveExpiry, strike: row.strike, side, row });
                         return (
                           <div
                             key={row.strike}
@@ -773,14 +803,14 @@ export default function TradePage() {
                       const side: OptionSide = chainView === 'calls' ? 'call' : 'put';
                       const isSelected =
                         selectedOption?.strike === row.strike && selectedOption?.side === side;
-                      const atmStrike = chain.length ? chain.reduce((best, r) => Math.abs(r.strike - spot) < Math.abs(best - spot) ? r.strike : best, chain[0].strike) : null;
+                      const atmStrike = chain.length ? chain.reduce((best, r) => Math.abs(r.strike - displaySpot) < Math.abs(best - displaySpot) ? r.strike : best, chain[0].strike) : null;
                       const isAtm = atmStrike !== null && row.strike === atmStrike;
                       return (
                         <button
                           key={row.strike}
                           onClick={() =>
                             setSelectedOption({
-                              expiry: selectedExpiry,
+                              expiry: effectiveExpiry,
                               strike: row.strike,
                               side,
                               row,
@@ -811,15 +841,14 @@ export default function TradePage() {
               </div>
             </div>
 
-            {/* Order Entry Panel */}
+            {/* Order Entry Panel - fixed-height slot for option label so options chain height doesn't change on row click */}
             <div className="border border-border rounded-lg card-glass p-3 shrink-0">
               <h3 className="text-sm font-semibold mb-2">Place Order</h3>
-              {selectedOption && (
-                <p className="text-xs text-muted-foreground mb-2 font-mono">
-                  {chainSnapshot.symbol} {formatExpiryLabel(selectedOption.expiry)} ${selectedOption.strike}{' '}
-                  {selectedOption.side === 'call' ? 'Call' : 'Put'}
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mb-2 font-mono min-h-[1.25rem]">
+                {selectedOption
+                  ? `${chainSnapshot.symbol} ${formatExpiryLabel(selectedOption.expiry)} $${selectedOption.strike} ${selectedOption.side === 'call' ? 'Call' : 'Put'}`
+                  : '\u00A0'}
+              </p>
               <div className="space-y-3">
                 <fieldset className="space-y-1 border-0 p-0 m-0">
                   <legend className="block text-xs text-muted-foreground mb-0.5">Side</legend>
@@ -930,16 +959,19 @@ export default function TradePage() {
                 {orderType === 'limit' ? (
                   <div className="space-y-1">
                     <label htmlFor="order-limit-price" className="block text-xs text-muted-foreground">Limit Price ($ per contract)</label>
-                    <input
-                      id="order-limit-price"
-                      type="number"
-                      min={0}
-                      step={0.01}
-                      value={limitPrice}
-                      onChange={(e) => setLimitPrice(e.target.value)}
-                      placeholder={defaultLimit ? defaultLimit.toFixed(2) : '0.00'}
-                      className="w-full px-3 py-2 text-sm rounded border border-border bg-background/50"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="order-limit-price"
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={limitPrice}
+                        onChange={(e) => setLimitPrice(e.target.value)}
+                        placeholder={defaultLimit ? defaultLimit.toFixed(2) : '0.00'}
+                        className="flex-1 min-w-0 px-3 py-2 text-sm rounded border border-border bg-background/50"
+                      />
+                      <span className="text-xs text-muted-foreground shrink-0">USDC</span>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-1">
@@ -1069,8 +1101,7 @@ export default function TradePage() {
         </div>
       </main>
 
-      {/* Footer - wrapped card to match page content pattern */}
-      <div className="px-2 pb-2 shrink-0 safe-x safe-bottom">
+      <div className="pb-2 px-2 shrink-0">
         <footer className="rounded-lg border border-border card-glass px-3 py-2 w-full">
           <div className="w-full flex items-center justify-between">
             <p className="text-xs text-muted-foreground">© Monad Blitz Denver</p>
@@ -1184,6 +1215,6 @@ export default function TradePage() {
           </div>
         );
       })()}
-    </div>
+    </PageContainer>
   );
 }

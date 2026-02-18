@@ -6,19 +6,24 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { WalletAvatar } from '@/components/wallet-avatar';
 import { CoachTradeTabs } from '@/components/coach-trade-tabs';
+import { PageContainer } from '@/components/page-container';
 import { createCoachBus } from '@/lib/voice-coach-bus';
 import { createVoiceWsClient } from '@/lib/voice-ws-client';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { getConvexVoiceUrl, CONVEX_VOICE_API_PATH } from '@/lib/convex-voice';
-import { getMockOptionsChain, formatExpiryShort } from '@/lib/options-chain';
-import { useSpotPrices, ethSpot } from '@/lib/use-spot-prices';
+import { getOptionsChainWithSpot, formatExpiryShort } from '@/lib/options-chain';
+import { useSpotPrices, ethSpot, useMonadMarket } from '@/lib/use-spot-prices';
 
 function GuideContext() {
-  const chain = useMemo(() => getMockOptionsChain(), []);
-  const { prices, loading: pricesLoading, error: pricesError } = useSpotPrices();
-  const spot = ethSpot(prices, chain.spot);
+  const { data: monadMarket, error: monadError } = useMonadMarket();
+  const spot = monadMarket?.price ?? 1.15;
+  const chain = useMemo(
+    () => getOptionsChainWithSpot(spot, { change24h: monadMarket?.change24h ?? undefined }),
+    [spot, monadMarket?.change24h]
+  );
+  const { loading: pricesLoading } = useSpotPrices();
   const symbol = chain.symbol;
   const nearestExpiry = chain.expirations[0] ?? '';
   const callSpreadShort = 3200;
@@ -35,7 +40,7 @@ function GuideContext() {
     {
       label: 'Spot',
       value: spotFormatted,
-      sub: pricesError ? 'CoinGecko unavailable' : 'Live (CoinGecko)',
+      sub: monadError && !monadMarket ? 'CoinGecko unavailable' : 'Live (CoinGecko)',
     },
     {
       label: 'Strategy',
@@ -102,7 +107,9 @@ function GuideContext() {
 export default function GuidePage() {
   const wsUrl = process.env.NEXT_PUBLIC_VOICE_WS_URL ?? '';
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? '';
+  const voiceApiUrl = getConvexVoiceUrl();
   const useConvex = !!convexUrl;
+  const voiceConfigured = useConvex && !!voiceApiUrl || !!wsUrl;
 
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -139,7 +146,10 @@ export default function GuidePage() {
     if (session.coachText !== undefined) setGuideText(session.coachText);
     if (session.coachPartial !== undefined) setGuideText(session.coachPartial);
     if (session.error) setLastError(session.error);
-    if (session.transcript ?? session.coachText ?? session.error) setProcessing(false);
+    if (session.transcript ?? session.coachText ?? session.error) {
+      setProcessing(false);
+      if (process.env.NODE_ENV === 'development') console.log('[Voice] Session update:', { transcript: !!session.transcript, coachText: !!session.coachText, error: session.error });
+    }
   }, [session]);
 
   useEffect(() => {
@@ -169,9 +179,11 @@ export default function GuidePage() {
 
     if (useConvex && createSession) {
       try {
+        if (process.env.NODE_ENV === 'development') console.log('[Voice] Creating session…');
         const id = await createSession();
         setSessionId(id);
         audioChunksRef.current = [];
+        if (process.env.NODE_ENV === 'development') console.log('[Voice] Session created:', id);
         navigator.mediaDevices
           .getUserMedia({ audio: true })
           .then((stream) => {
@@ -188,12 +200,15 @@ export default function GuidePage() {
             };
             recorder.start(250);
             setListening(true);
+            if (process.env.NODE_ENV === 'development') console.log('[Voice] Listening (tap End to send)');
           })
           .catch(() => {
             setLastError('Microphone access denied');
           });
       } catch (e) {
-        setLastError(e instanceof Error ? e.message : 'Failed to create session');
+        const msg = e instanceof Error ? e.message : 'Failed to create session';
+        setLastError(msg);
+        if (process.env.NODE_ENV === 'development') console.error('[Voice] createSession failed:', e);
       }
       return;
     }
@@ -288,32 +303,58 @@ export default function GuidePage() {
       audioChunksRef.current = [];
       const baseUrl = getConvexVoiceUrl();
       setProcessing(true);
-      if (baseUrl && chunks.length > 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Voice] End: baseUrl=', baseUrl ? `${baseUrl.slice(0, 30)}…` : '(empty)', 'chunks=', chunks.length);
+      }
+      if (!baseUrl) {
+        setLastError('Voice API URL not set. Set NEXT_PUBLIC_CONVEX_URL or NEXT_PUBLIC_CONVEX_SITE_URL.');
+        setProcessing(false);
+      } else if (chunks.length > 0) {
         const blob = new Blob(chunks);
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
           const base64 = (reader.result as string)?.split(',')[1] ?? '';
-          fetch(`${baseUrl}${CONVEX_VOICE_API_PATH}`, {
+          const url = `${baseUrl}${CONVEX_VOICE_API_PATH}`;
+          if (process.env.NODE_ENV === 'development') console.log('[Voice] POST', url, 'audio length', base64.length);
+          fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sessionId, audioBase64: base64 }),
-          }).catch(() => {
-            setLastError('Failed to send audio');
-            setProcessing(false);
-          });
+          })
+            .then(async (res) => {
+              const data = await res.json().catch(() => ({})) as { error?: string };
+              if (process.env.NODE_ENV === 'development') console.log('[Voice] Response', res.status, res.ok ? 'OK' : data?.error ?? res.statusText);
+              if (!res.ok) {
+                setLastError(data?.error ?? res.statusText ?? 'Voice request failed');
+                setProcessing(false);
+              }
+            })
+            .catch((err) => {
+              if (process.env.NODE_ENV === 'development') console.error('[Voice] Fetch error:', err);
+              setLastError('Failed to send audio. Check Convex URL and network.');
+              setProcessing(false);
+            });
         };
-      } else if (baseUrl) {
+      } else {
         fetch(`${baseUrl}${CONVEX_VOICE_API_PATH}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
-        }).catch(() => {
-          setLastError('Failed to send request');
-          setProcessing(false);
-        });
-      } else {
-        setProcessing(false);
+        })
+          .then(async (res) => {
+            const data = await res.json().catch(() => ({})) as { error?: string };
+            if (process.env.NODE_ENV === 'development') console.log('[Voice] POST (no audio)', res.status, data?.error ?? '');
+            if (!res.ok) {
+              setLastError(data?.error ?? res.statusText ?? 'Voice request failed');
+              setProcessing(false);
+            }
+          })
+          .catch((err) => {
+            if (process.env.NODE_ENV === 'development') console.error('[Voice] Fetch error:', err);
+            setLastError('Failed to send request. Check Convex URL and network.');
+            setProcessing(false);
+          });
       }
       return;
     }
@@ -332,14 +373,19 @@ export default function GuidePage() {
   const isActive = listening;
   const isProcessing = processing && !transcript && !guideText && !lastError;
   const needsBackend = !convexUrl && !wsUrl;
-  const hasError = !!lastError || needsBackend;
+  const voiceUrlMissing = useConvex && !voiceApiUrl;
+  const hasError = !!lastError || needsBackend || voiceUrlMissing;
   const errorMessage =
     lastError ??
-    (needsBackend ? 'Set NEXT_PUBLIC_CONVEX_URL (recommended) or NEXT_PUBLIC_VOICE_WS_URL' : '');
+    (voiceUrlMissing
+      ? 'Voice API URL not set. Use NEXT_PUBLIC_CONVEX_URL like https://your-deploy.convex.cloud (or set NEXT_PUBLIC_CONVEX_SITE_URL). Restart dev server after changing .env.local.'
+      : needsBackend
+        ? 'Voice needs Convex. Add NEXT_PUBLIC_CONVEX_URL to .env.local (e.g. https://xxx.convex.cloud), then run npx convex dev and set GEMINI_API_KEY in Convex dashboard. Restart yarn dev.'
+        : '');
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden safe-top safe-bottom">
-      <div className="px-2 pt-2 shrink-0 safe-x">
+    <PageContainer className="h-dvh flex flex-col overflow-hidden">
+      <div className="pt-2 px-2 shrink-0">
         <header className="rounded-lg border border-border card-glass">
           <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 items-stretch sm:items-center px-3 py-2">
           <div className="min-w-0 flex items-center justify-between sm:justify-start gap-2">
@@ -371,7 +417,7 @@ export default function GuidePage() {
       </div>
 
       <main className="flex-1 overflow-hidden min-w-0">
-        <div className="h-full flex flex-col lg:flex-row gap-2 p-2 safe-x">
+        <div className="h-full flex flex-col lg:flex-row gap-2 p-2 px-2">
           <div className="flex-1 lg:flex-[0.45] flex flex-col gap-2 min-w-0">
             <div className="flex-1 relative rounded-2xl overflow-hidden flex items-center justify-center min-h-[260px] sm:min-h-[300px] md:min-h-[320px]">
               <div
@@ -426,21 +472,27 @@ export default function GuidePage() {
               </div>
 
               <div className="relative z-10 text-center px-4 sm:px-6 pt-28 sm:pt-36">
-                <p className="text-base sm:text-lg tracking-tight text-foreground/90 font-bold max-w-xs mx-auto mt-16 sm:mt-24 mb-6 sm:mb-8">
+                <p className="text-base sm:text-lg tracking-tight text-foreground/90 font-bold max-w-xs mx-auto mt-16 sm:mt-24 mb-2 sm:mb-3">
                   {isActive ? 'Listening on Monad' : 'Speak. Get clarity.'}
                 </p>
+                {isActive && (
+                  <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-4 sm:mb-6">
+                    Speak, then tap End to send
+                  </p>
+                )}
                 <Button
-                  size="lg"
-                  variant={isActive ? 'destructive' : 'primarySubtle'}
+                  variant={isActive ? 'destructive' : 'default'}
+                  size="sm"
                   onClick={() => (isActive ? stopCapture() : startCapture())}
-                  className={
-                    isActive
-                      ? 'rounded-full px-8 sm:px-10 py-5 sm:py-6 text-sm font-medium border border-destructive/40 text-white hover:bg-destructive/30 hover:border-destructive/60 transition-colors min-h-[44px]'
-                      : 'rounded-full px-8 sm:px-10 py-5 sm:py-6 text-sm font-medium min-h-[44px]'
-                  }
+                  className="rounded-lg px-4 py-2 text-sm font-medium active:scale-[0.98] transition-transform"
                 >
                   {isActive ? 'End' : 'Begin'}
                 </Button>
+                {!voiceConfigured && (
+                  <p className="mt-3 text-xs text-muted-foreground max-w-xs mx-auto px-2">
+                    Voice requires Convex. Add <code className="text-[10px] bg-muted/50 px-1 rounded">NEXT_PUBLIC_CONVEX_URL</code> to .env.local, run <code className="text-[10px] bg-muted/50 px-1 rounded">npx convex dev</code>, set GEMINI_API_KEY in Convex dashboard, then restart <code className="text-[10px] bg-muted/50 px-1 rounded">yarn dev</code>.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -480,12 +532,12 @@ export default function GuidePage() {
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
-                  <div>
+                  <div className="px-2">
                     <p className="text-sm font-light">
-                      {isProcessing ? 'Processing your message…' : 'Transcript appears here'}
+                      {isProcessing ? 'Processing your message…' : !voiceConfigured ? 'Voice not configured' : 'Transcript appears here'}
                     </p>
                     <p className="text-[10px] mt-1.5 uppercase tracking-wider opacity-70">
-                      {isProcessing ? 'Guide will respond shortly' : 'Click begin to start'}
+                      {isProcessing ? 'Guide will respond shortly' : !voiceConfigured ? 'See setup hint under Begin button and error box above' : 'Click Begin, speak, then tap End to send'}
                     </p>
                   </div>
                 </div>
@@ -495,7 +547,7 @@ export default function GuidePage() {
         </div>
       </main>
 
-      <div className="px-2 pb-2 shrink-0 safe-x safe-bottom">
+      <div className="pb-2 px-2 shrink-0">
         <footer className="rounded-lg border border-border card-glass px-3 py-2 w-full">
           <div className="w-full flex items-center justify-between">
             <p className="text-xs text-muted-foreground">© Monad Blitz Denver</p>
@@ -503,6 +555,6 @@ export default function GuidePage() {
           </div>
         </footer>
       </div>
-    </div>
+    </PageContainer>
   );
 }

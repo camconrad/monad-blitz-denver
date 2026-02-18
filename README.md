@@ -1,167 +1,98 @@
 # Monad Options
 
-**Demystifying Options Trading Through AI-Powered Voice**
-
-Trade European vanilla options the natural way—through conversation. Ask questions, get AI-powered insights, manage risk, and execute strategies using your voice. No jargon, just results.
-
-> A production-ready Next.js application built with TypeScript, Tailwind CSS, shadcn/ui, and real-time WebSocket communication.
-
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
-![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat-square&logo=tailwind-css)
-
-## ⚡ Quick Start
-
-```bash
-# Install dependencies
-yarn install
-
-# Start development server
-yarn dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see your app.
-
-**Network:** This app runs on **Monad Testnet** (Chain ID `10143`, RPC `https://testnet-rpc.monad.xyz`, explorer [testnet.monadvision.com](https://testnet.monadvision.com)). Config is in `lib/chain.ts`.
-
-**Voice backend (Gamma Guide):** Use **Convex** (recommended) or a WebSocket server.
-- **Convex:** Run `npx convex dev` to link a Convex project, then set `NEXT_PUBLIC_CONVEX_URL` in `.env.local`. The Guide page will create a session, record audio, and POST to your Convex HTTP action at `/api/voice`; transcript and coach response stream back in real time via Convex subscriptions.
-- **WebSocket:** Set `NEXT_PUBLIC_VOICE_WS_URL` (e.g. `ws://localhost:8080/ws/voice`) to use your own backend. If neither is set, the Guide shows a setup message.
-
-**New to this setup?** → See [QUICKSTART.md](./QUICKSTART.md) for a beginner-friendly guide.
-
-## 💡 The Problem We Solve
-
-Options trading is complex, intimidating, and filled with jargon. Most platforms require deep knowledge of Greeks, spreads, and strategies before you can even place your first trade. We're changing that.
-
-**Monad Options** lets you:
-- 🗣️ **Ask questions naturally** - "Should I buy a call on ETH?" instead of calculating strike prices
-- 🤖 **Get AI guidance** - Real-time analysis of market conditions and your positions
-- ⚡ **Trade faster** - Voice commands while monitoring charts
-- 📚 **Learn by doing** - Understand strategies through conversation, not textbooks
-- 🛡️ **Manage risk** - AI alerts you to potential issues before they become problems
-
-## 🎯 Application Pages
-
-This app has **2 main pages**:
-
-1. **`/guide`** - AI Voice Assistant (Gamma Guide) for real-time trading guidance
-2. **`/trade`** - Options Trading Platform (Binance/Bybit/OKX style)
-
-See [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) for complete application architecture.
-
-## 📚 Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [VALUE_PROPOSITION.md](./VALUE_PROPOSITION.md) | **Why this matters - problem, solution, vision** |
-| [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) | **App architecture, pages, data flow** |
-| [QUICKSTART.md](./QUICKSTART.md) | Get started in 3 minutes |
-| [PROJECT_CONFIG.md](./PROJECT_CONFIG.md) | Complete technical setup & replication guide |
-| [PAGES_GUIDE.md](./PAGES_GUIDE.md) | Coach + Trade implementation; Web APIs (MDN): BroadcastChannel, getUserMedia, WebSocket, Fetch, TTS |
-| [TRADINGVIEW.md](./TRADINGVIEW.md) | TradingView chart integration (Widget), best practices, and future Advanced Charts notes |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Development guidelines |
-
-## 🚀 Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Framework** | Next.js 15 (App Router) |
-| **Runtime** | React 19 |
-| **Language** | TypeScript 5 |
-| **Styling** | Tailwind CSS 3.4 |
-| **UI Components** | shadcn/ui |
-| **Animations** | animate-ui + Motion |
-| **Icons** | Lucide React |
-| **Package Manager** | Yarn |
-
-## 📦 What's Included
-
-- ✅ Next.js 15 with App Router and React 19
-- ✅ TypeScript with strict mode
-- ✅ Tailwind CSS with custom design tokens
-- ✅ shadcn/ui component system
-- ✅ animate-ui with smooth animations
-- ✅ Path aliases (`@/*`)
-- ✅ Beautiful demo page with animated counter
-- ✅ Production-ready configuration
-- ✅ Comprehensive documentation
-
-## 🎨 Adding Components
-
-### shadcn/ui
-
-```bash
-npx shadcn@latest add button
-npx shadcn@latest add card
-npx shadcn@latest add dialog
-```
-
-Browse: [ui.shadcn.com](https://ui.shadcn.com/docs/components)
-
-### animate-ui
-
-```bash
-npx shadcn@latest add @animate-ui/primitives-texts-typing-text
-npx shadcn@latest add @animate-ui/primitives-containers-animated-card
-```
-
-Browse: [animate-ui.com](https://animate-ui.com/docs)
-
-## 📁 Project Structure
-
-```
-monad-blitz-denver/
-├── app/                    # Next.js App Router
-│   ├── page.tsx           # Home page
-│   ├── layout.tsx         # Root layout
-│   └── globals.css        # Global styles
-├── components/
-│   ├── ui/                # shadcn/ui components
-│   └── animate-ui/        # animate-ui components
-├── lib/
-│   └── utils.ts           # Utilities (cn helper)
-├── hooks/                 # Custom React hooks
-├── PROJECT_CONFIG.md      # Technical documentation
-├── QUICKSTART.md          # Quick start guide
-└── CONTRIBUTING.md        # Development guidelines
-```
-
-## 🛠️ Common Commands
-
-```bash
-yarn dev          # Start development server
-yarn build        # Build for production
-yarn start        # Start production server
-yarn lint         # Run ESLint
-```
-
-## 🎯 For Monad Blitz Participants
-
-This is a fork of the official Monad Blitz Denver submission template. You can:
-
-1. ✅ Build your project in this repo
-2. ✅ Commit and push changes
-3. ✅ Submit via [Blitz Portal](https://blitz.devnads.com)
-
-The fork relationship is maintained for easy submission.
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines and best practices.
-
-## 📖 Learn More
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
-- [animate-ui Documentation](https://animate-ui.com)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-
-## 📄 License
-
-This project is open source and available for the Monad Blitz Denver hackathon.
+**AI-powered voice trading assistant for European vanilla options.** Ask in plain English, get guidance, and trade on Monad Testnet.
 
 ---
 
-**Ready to build?** Start editing `app/page.tsx` and create something amazing! 🚀
+## What’s done and verified
+
+| Area | Status | Notes |
+|------|--------|--------|
+| **Pages** | ✅ | Home (`/`), Coach (`/coach`), Guide (`/guide`), Trade (`/trade`). Tabs: Guide ↔ Trade. Layout: consistent 8px gap (pt-2 / px-2 / pb-2); side padding not overridden (safe-area on `<body>` only). |
+| **Voice (Gamma Guide)** | ✅ | Convex backend: session → Gemini → ElevenLabs TTS. Optional WebSocket (`NEXT_PUBLIC_VOICE_WS_URL`). Guide page: record → POST `/api/voice` → real-time transcript + coach response. BroadcastChannel bus for cross-tab (Coach ↔ Trade). |
+| **Options trading (Trade page)** | ✅ | MON-USD chain; live spot from CoinGecko (`/api/price/monad`). Options chain (calls/puts), order panel (buy/sell, limit/market), TradingView chart. |
+| **Contract (GammaGuide)** | ✅ | Deployed on Monad Testnet. Trade page wired: positions from chain, `buyOption`, `settle`. Set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS` after deploy. |
+| **Price APIs** | ✅ | `/api/price` (multi-coin); `/api/price/monad` (MON markets). Timeouts + 502/500. Optional `COINGECKO_API_KEY` for higher rate limits. Guide Spot row shows “Live (CoinGecko)” from MON market data only. |
+| **Wallet** | ✅ | RainbowKit + Wagmi; Monad Testnet (Chain ID 10143). WalletConnect: `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`. |
+| **Security** | ✅ | API keys server-side (Convex, Next API). Security headers in `next.config.ts`. No keys in contract. |
+| **Errors / resilience** | ✅ | `error.tsx`, `global-error.tsx`, `not-found.tsx`. Voice/price errors surfaced in UI. |
+| **Tests** | ✅ | `yarn test`: Forge contract tests (16) + integration (CoinGecko, ElevenLabs; optional `BASE_URL` for `/api/price/monad`). |
+
+---
+
+## Quick start
+
+```bash
+yarn install
+yarn dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+**Network:** Monad Testnet (Chain ID `10143`, RPC `https://testnet-rpc.monad.xyz`). Config: `lib/chain.ts`.
+
+**Voice:** Convex (recommended). Run `npx convex dev`, set `NEXT_PUBLIC_CONVEX_URL` in `.env.local`. Convex env: `GEMINI_API_KEY`, `ELEVEN_LABS_API_KEY`. Or set `NEXT_PUBLIC_VOICE_WS_URL` for your own WebSocket backend.
+
+**Contract:** After `yarn deploy:contract`, set `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS` in `.env.local` (and in Vercel for production). See [DEPLOY.md](./DEPLOY.md).
+
+Copy [.env.example](./.env.example) to `.env.local` and fill required values.
+
+---
+
+## Deployed and wired
+
+- **GammaGuide:** Deployed on Monad Testnet. Current address in [DEPLOY.md](./DEPLOY.md); set as `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`. Trade page uses it for positions, `buyOption`, and `settle`. Quote token (testnet USDC) funded for payouts.
+- **Convex:** Voice backend; HTTP action `/api/voice`; env in Convex dashboard.
+- **Vercel:** Frontend + API routes. Env: `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`, `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`, `NEXT_PUBLIC_GAMMA_GUIDE_ADDRESS`; optional `COINGECKO_API_KEY`.
+
+---
+
+## Tested
+
+| Command | What it runs |
+|---------|----------------|
+| `yarn test` | Contract (Forge, offline) + integration (CoinGecko, ElevenLabs; optional `BASE_URL=http://localhost:3000` for `/api/price/monad`) |
+| `yarn test:contract` | `forge test --offline` (16 tests) |
+| `yarn test:integration` | `scripts/run-tests.mjs` (CoinGecko, ElevenLabs, optional Next API) |
+| `yarn test:coingecko` | CoinGecko Monad endpoint |
+| `yarn test:elevenlabs` | ElevenLabs TTS (needs `ELEVEN_LABS_API_KEY`) |
+
+E2E (manual): connect wallet, view chain, place order, view/settle position; Guide: voice → Convex → transcript/playback.
+
+---
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `yarn dev` | Dev server |
+| `yarn build` | Production build |
+| `yarn start` | Production server |
+| `yarn lint` | ESLint |
+| `yarn c` | Convex dev |
+| `yarn cd` | Convex deploy |
+| `yarn deploy:contract` | Deploy GammaGuide (Foundry); needs `DEPLOYER_PRIVATE_KEY`, `MONAD_RPC_URL` in `.env.local` |
+| `yarn verify:contract <addr>` | Verify GammaGuide on Sourcify (Monad Testnet) |
+
+---
+
+## Docs
+
+| Doc | Purpose |
+|-----|---------|
+| [QUICKSTART.md](./QUICKSTART.md) | Short setup |
+| [DEPLOY.md](./DEPLOY.md) | Contract deploy + verify + app wiring |
+| [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) | Checklist, env, security, deployment |
+| [PAGES_GUIDE.md](./PAGES_GUIDE.md) | Coach/Trade implementation, Web APIs (BroadcastChannel, getUserMedia, WebSocket, Fetch, TTS) |
+| [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) | Architecture and data flow |
+| [.env.example](./.env.example) | Env template |
+
+---
+
+## Stack
+
+Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui, Motion, Convex, Wagmi/RainbowKit, Viem. Contract: Solidity (Foundry).
+
+---
+
+**Monad Blitz Denver** — fork and submit via [Blitz Portal](https://blitz.devnads.com).

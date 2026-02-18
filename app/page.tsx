@@ -2,12 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import { Mic, CandlestickChart } from 'lucide-react';
+import { PageContainer } from '@/components/page-container';
 
 export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 safe-x safe-y">
+    <PageContainer className="min-h-dvh flex flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 max-w-2xl w-full">
         {/* Guide */}
         <button
@@ -41,6 +42,6 @@ export default function Home() {
           </div>
         </button>
       </div>
-    </div>
+    </PageContainer>
   );
 }
